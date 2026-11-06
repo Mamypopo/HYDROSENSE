@@ -25,10 +25,10 @@ type Props = {
 function Chip({ icon, value, unit, label, tone = '' }: { icon: ReactNode; value: string; unit?: string; label: string; tone?: string }) {
   return (
     <div className={`hs-glass ${tone} rounded-[26px] px-3.5 py-3 sm:px-4`}>
-      <div className="flex items-center gap-1.5 text-white/80">{icon}<span className="text-xs sm:text-sm">{label}</span></div>
+      <div className="flex items-center gap-1.5 text-[var(--hero-sub)]">{icon}<span className="text-xs sm:text-sm">{label}</span></div>
       <p className="mt-1.5 leading-none">
         <span className="hs-num text-[28px] font-semibold sm:text-[32px]">{value}</span>
-        {unit && <span className="hs-num ml-0.5 text-base text-white/80">{unit}</span>}
+        {unit && <span className="hs-num ml-0.5 text-base text-[var(--hero-sub)]">{unit}</span>}
       </p>
     </div>
   );
@@ -42,7 +42,7 @@ export default function Hero({ pumpOn, today, online, agoSec, dark, onToggleThem
   const item = reduce ? {} : { variants: { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { duration: 0.5 } } } };
 
   return (
-    <header className="relative isolate flex min-h-[80svh] flex-col justify-between overflow-hidden p-5 pb-16 text-white sm:p-8 sm:pb-20 lg:sticky lg:top-0 lg:h-dvh lg:min-h-0 lg:rounded-r-[44px] lg:pb-10">
+    <header className="relative isolate flex min-h-[80svh] flex-col justify-between overflow-hidden p-5 pb-16 text-[var(--hero-ink)] sm:p-8 sm:pb-20 lg:sticky lg:top-0 lg:h-dvh lg:min-h-0 lg:rounded-r-[44px] lg:pb-10">
       <motion.div className="hs-photo absolute inset-0 -z-20" {...photoAnim} />
       <TankScene waterOk={waterOk} pumpOn={pumpOn} hot={hot} />
       <div className="hs-scrim absolute inset-0 -z-[4]" />
@@ -52,12 +52,12 @@ export default function Hero({ pumpOn, today, online, agoSec, dark, onToggleThem
           <span className="hs-glass grid h-11 w-11 shrink-0 place-items-center rounded-full"><Sprout className="h-5 w-5" /></span>
           <div className="min-w-0">
             <p className="truncate font-semibold leading-tight">โรงเรือน 1</p>
-            <p className="truncate text-sm text-white/75">{today}</p>
+            <p className="truncate text-sm text-[var(--hero-sub)]">{today}</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <div className="hs-glass flex h-11 items-center gap-2 rounded-full px-3.5 text-sm" role="status">
-            <span className={`h-2 w-2 rounded-full ${online ? 'hs-pulse bg-[#8DE26B]' : 'bg-[#FF8A80]'}`} />
+            <span className={`h-2 w-2 rounded-full ${online ? 'hs-pulse bg-[#4CC76F]' : 'bg-[#F2635A]'}`} />
             {online ? 'ออนไลน์' : 'ออฟไลน์'}
           </div>
           <button type="button" onClick={onToggleTheme} aria-label="สลับโหมดมืดและสว่าง" className="hs-glass grid h-11 w-11 place-items-center rounded-full">
@@ -68,7 +68,7 @@ export default function Hero({ pumpOn, today, online, agoSec, dark, onToggleThem
 
       <div>
         <h1 className="hs-headline whitespace-pre-line text-[38px] font-medium leading-[1.2] sm:text-5xl">{headline}</h1>
-        <p className="mt-3 text-white/80">
+        <p className="mt-3 text-[var(--hero-sub)]">
           {agoSec === null ? 'ยังไม่มีข้อมูลจากอุปกรณ์' : `อัปเดตล่าสุด ${agoSec} วินาทีก่อน`}
         </p>
         <motion.div className="mt-6 grid grid-cols-3 gap-2.5 sm:gap-3" {...chipsAnim}>

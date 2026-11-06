@@ -20,7 +20,7 @@ const isDark = () => document.documentElement.classList.contains('dark');
 const swalTheme = () => (isDark() ? { background: '#1A2B20', color: '#E8F0E6' } : {});
 const toast = (title: string, icon: 'success' | 'info' | 'warning' | 'error' = 'info') =>
   Swal.fire({ toast: true, position: 'top', showConfirmButton: false, timer: 3000, timerProgressBar: true, icon, title, ...swalTheme() });
-const fire = (o: SweetAlertOptions) => Swal.fire({ confirmButtonColor: '#4F7A17', ...swalTheme(), ...o });
+const fire = (o: SweetAlertOptions) => Swal.fire({ confirmButtonColor: '#1f78b4', ...swalTheme(), ...o });
 
 export default function Dashboard() {
   const [ready, setReady] = useState(false);

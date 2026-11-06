@@ -39,7 +39,7 @@ export default function ControlCard({ settings, decision, waterOk, pumpOn, onMod
       <button
         type="button" role="radio" aria-checked={active} onClick={() => onMode(m)}
         className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full px-4 font-medium transition-colors"
-        style={{ background: active ? 'var(--pump-ink)' : 'transparent', color: active ? 'var(--pump-bg)' : 'inherit' }}
+        style={{ background: active ? 'var(--bubble)' : 'transparent', color: active ? 'var(--ink)' : 'inherit', boxShadow: active ? '0 1px 6px rgba(0,0,0,.08)' : 'none' }}
       >
         {icon}{label}
       </button>
@@ -75,11 +75,11 @@ export default function ControlCard({ settings, decision, waterOk, pumpOn, onMod
               <Lock className="h-5 w-5" />ล็อกอยู่ เพราะน้ำแห้ง
             </button>
           ) : settings.manual_pump ? (
-            <button type="button" onClick={onManualToggle} className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[#C8372D] px-6 text-lg font-medium text-white active:brightness-90">
+            <button type="button" onClick={onManualToggle} className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[var(--stop-bg)] px-6 text-lg font-medium text-[var(--stop-ink)] active:brightness-95">
               <PowerOff className="h-5 w-5" />หยุดปั๊ม
             </button>
           ) : (
-            <button type="button" onClick={onManualToggle} className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[var(--pump-acc)] px-6 text-lg font-medium text-white active:brightness-90">
+            <button type="button" onClick={onManualToggle} className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[var(--btn-bg)] px-6 text-lg font-medium text-[var(--btn-ink)] active:brightness-95">
               <Power className="h-5 w-5" />เปิดปั๊ม
             </button>
           )}

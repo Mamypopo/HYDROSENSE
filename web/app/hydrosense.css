@@ -10,6 +10,11 @@
   --plot-bg: #e9e4fa; --plot-ink: #3f3480;
   --diary-bg: #d8f2e3; --diary-ink: #17583a;
   --bubble: #ffffff; --step: rgba(255, 255, 255, 0.72);
+  --btn-bg: #9fd4f3; --btn-ink: #0f3f5e;
+  --stop-bg: #ffb9b2; --stop-ink: #7a1f1a;
+  --hero-ink: #173a40; --hero-sub: rgba(23, 58, 64, 0.72); --hero-shadow: none;
+  --glass-bg: rgba(255, 255, 255, 0.58); --glass-bd: rgba(255, 255, 255, 0.85);
+  --glass-warn: rgba(255, 205, 160, 0.8); --glass-bad: rgba(255, 175, 170, 0.82);
 }
 .dark {
   --bg: #07130d; --sheet: #0f1620; --soft: #1a2230; --ink: #e9edf5; --muted: #98a2b3;
@@ -21,6 +26,11 @@
   --plot-bg: #2a2550; --plot-ink: #d9d2ff;
   --diary-bg: #153b2a; --diary-ink: #cdefd9;
   --bubble: #1a2230; --step: rgba(255, 255, 255, 0.12);
+  --btn-bg: #5db5ea; --btn-ink: #06202f;
+  --stop-bg: #ff8f86; --stop-ink: #3a0a07;
+  --hero-ink: #f2f7f5; --hero-sub: rgba(242, 247, 245, 0.75); --hero-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+  --glass-bg: rgba(255, 255, 255, 0.12); --glass-bd: rgba(255, 255, 255, 0.25);
+  --glass-warn: rgba(224, 120, 43, 0.35); --glass-bad: rgba(200, 55, 45, 0.4);
 }
 html { color-scheme: light; }
 html.dark { color-scheme: dark; }
@@ -34,32 +44,37 @@ body.hs { background: var(--bg); color: var(--ink); }
 
 /* ภาพโรงเรือน: วางรูปจริงไว้ที่ public/greenhouse.jpg ถ้าไม่มีรูปจะเห็นพื้นหลังไล่สีสำรอง */
 .hs-photo {
-  background-color: #2a9a78;
+  background-color: #cdeedb;
   background-image:
     url('/greenhouse.jpg'),
-    radial-gradient(60% 40% at 82% 8%, rgba(255, 236, 170, 0.75), rgba(255, 236, 170, 0) 70%),
-    radial-gradient(50% 35% at 10% 62%, rgba(120, 230, 190, 0.4), transparent 70%),
-    linear-gradient(180deg, #46bf9c 0%, #2a9a78 45%, #1b6b52 100%);
+    radial-gradient(55% 38% at 84% 6%, rgba(255, 214, 190, 0.95), rgba(255, 214, 190, 0) 70%),
+    radial-gradient(48% 34% at 8% 58%, rgba(255, 244, 190, 0.7), transparent 70%),
+    linear-gradient(180deg, #bfe6f2 0%, #cdeedb 55%, #e4f4d2 100%);
   background-size: cover;
   background-position: center;
 }
-.hs-scrim {
-  background: linear-gradient(to bottom, rgba(6, 40, 28, 0.28) 0%, rgba(6, 40, 28, 0) 32%, rgba(6, 40, 28, 0.55) 100%);
+.dark .hs-photo {
+  background-color: #12301f;
+  background-image:
+    url('/greenhouse.jpg'),
+    radial-gradient(60% 40% at 82% 8%, rgba(255, 214, 140, 0.25), transparent 60%),
+    linear-gradient(180deg, #0c2b30 0%, #17472f 55%, #1f5a30 100%);
 }
+.hs-scrim { background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.3) 100%); }
+.dark .hs-scrim { background: linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 0.5) 100%); }
 
 /* กระจกฝ้า */
 .hs-glass {
-  background: rgba(255, 255, 255, 0.14);
-  -webkit-backdrop-filter: blur(18px) saturate(1.3);
-  backdrop-filter: blur(18px) saturate(1.3);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  color: #fff;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid var(--glass-bd);
+  color: var(--hero-ink);
 }
-.hs-glass-warn { background: rgba(224, 120, 43, 0.3); border-color: rgba(255, 190, 140, 0.6); }
-.hs-glass-bad { background: rgba(200, 55, 45, 0.38); border-color: rgba(255, 160, 150, 0.65); }
+.hs-glass-warn { background: var(--glass-warn); }
+.hs-glass-bad { background: var(--glass-bad); }
 .hs-display { font-family: var(--font-display), var(--font-sans), sans-serif; }
-.hs-headline { font-family: var(--font-display), var(--font-sans), sans-serif; text-shadow: 0 2px 14px rgba(0, 50, 35, 0.35); }
+.hs-headline { font-family: var(--font-display), var(--font-sans), sans-serif; text-shadow: var(--hero-shadow); }
 
 /* แคปซูลเมนูล่าง */
 .hs-pillnav {
@@ -70,7 +85,7 @@ body.hs { background: var(--bg); color: var(--ink); }
   bottom: max(16px, env(safe-area-inset-bottom));
 }
 .hs-navbtn { color: var(--muted); }
-.hs-navbtn[aria-current='page'] { background: var(--accent); color: #fff; }
+.hs-navbtn[aria-current='page'] { background: var(--btn-bg); color: var(--btn-ink); }
 
 /* ช่องกรอก: 16px ขึ้นไป กัน iOS ซูมเอง */
 .hs-field {

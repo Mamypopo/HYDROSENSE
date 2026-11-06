@@ -19,10 +19,10 @@ const N_DROPS = 10;
 const PLANT_X = [-0.5, 0, 0.5];
 const LID_TOP = TANK.h / 2 + 0.1;
 
-const GREEN = new THREE.Color('#6cc36b');
-const GREEN_IN = new THREE.Color('#a6e37e');
-const STRESS = new THREE.Color('#c9c45a');
-const STRESS_IN = new THREE.Color('#e0d576');
+const GREEN = new THREE.Color('#8fd48e');
+const GREEN_IN = new THREE.Color('#bdeaa0');
+const STRESS = new THREE.Color('#e6d98a');
+const STRESS_IN = new THREE.Color('#efe3a0');
 
 type Leaf = { angle: number; r: number; size: number; tilt: number; inner: boolean };
 const LEAVES: Leaf[] = [
@@ -56,7 +56,7 @@ function Scene({ waterOk, pumpOn, hot, reduce }: SceneProps) {
   const lidGeo = useMemo(() => new RoundedBoxGeometry(TANK.w + 0.08, 0.1, TANK.d + 0.08, 4, 0.04), []);
   const waterGeo = useMemo(() => new RoundedBoxGeometry(1, 1, 1, 3, 0.08), []);
   const pumpGeo = useMemo(() => new RoundedBoxGeometry(0.66, 0.62, 0.56, 4, 0.18), []);
-  const rim = waterOk === false ? '#ff8a80' : hot ? '#ffb27a' : '#bdf0f5';
+  const rim = waterOk === false ? '#ff7b72' : hot ? '#ffa66b' : '#7fd0dc';
 
   const innerH = TANK.h - WALL * 2;
   const bottom = -TANK.h / 2 + WALL;
@@ -135,15 +135,15 @@ function Scene({ waterOk, pumpOn, hot, reduce }: SceneProps) {
       {/* ถังกระจก */}
       <group position={[TANK.cx, 0, 0]}>
         <mesh geometry={tankGeo}>
-          <meshPhysicalMaterial color="#e6f8fa" transparent opacity={0.16} roughness={0.05} depthWrite={false} />
+          <meshPhysicalMaterial color="#ffffff" transparent opacity={0.3} roughness={0.05} depthWrite={false} />
         </mesh>
         <mesh geometry={tankGeo} scale={1.012}>
-          <meshBasicMaterial color={rim} transparent opacity={0.3} side={THREE.BackSide} depthWrite={false} />
+          <meshBasicMaterial color={rim} transparent opacity={0.55} side={THREE.BackSide} depthWrite={false} />
         </mesh>
 
         {/* น้ำ */}
         <mesh ref={water} geometry={waterGeo} position={[0, bottom, 0]} scale={[TANK.w - WALL * 2, 0.001, TANK.d - WALL * 2]}>
-          <meshStandardMaterial color="#58c3d3" transparent opacity={0.8} roughness={0.2} emissive="#2a8fa0" emissiveIntensity={0.35} />
+          <meshStandardMaterial color="#7fd3e0" transparent opacity={0.85} roughness={0.2} emissive="#4fb0c2" emissiveIntensity={0.25} />
         </mesh>
         <mesh ref={surface} rotation={[-Math.PI / 2, 0, 0]} position={[0, bottom, 0]}>
           <planeGeometry args={[TANK.w - WALL * 2 - 0.06, TANK.d - WALL * 2 - 0.06]} />
@@ -213,7 +213,7 @@ function Scene({ waterOk, pumpOn, hot, reduce }: SceneProps) {
       {/* ปั๊มหน้ายิ้ม มีใบพัดเล็กๆ บนหัว */}
       <group position={[PUMP_X, PIPE_Y, 0]}>
         <mesh geometry={pumpGeo}>
-          <meshStandardMaterial color="#ffd166" roughness={0.5} />
+          <meshStandardMaterial color="#ffd98a" roughness={0.5} />
         </mesh>
         <mesh position={[0, 0.34, 0]}>
           <cylinderGeometry args={[0.03, 0.03, 0.08, 10]} />
@@ -255,7 +255,7 @@ function Scene({ waterOk, pumpOn, hot, reduce }: SceneProps) {
 
       <ambientLight intensity={1.1} />
       <directionalLight position={[3, 4, 5]} intensity={1.5} />
-      <pointLight position={[-3, -2, 3]} intensity={5} color="#58c3d3" />
+      <pointLight position={[-3, -2, 3]} intensity={3} color="#8fd8e4" />
     </group>
   );
 }

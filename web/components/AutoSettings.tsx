@@ -77,7 +77,7 @@ export default function AutoSettings({ settings, decision, onSave }: Props) {
       {dirty && (
         <div className="col-span-2 flex gap-3">
           <button type="button" onClick={() => onSave({ th, on, off })}
-            className="inline-flex min-h-[56px] flex-1 items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 text-lg font-medium text-white active:brightness-90">
+            className="inline-flex min-h-[56px] flex-1 items-center justify-center gap-2 rounded-full bg-[var(--btn-bg)] px-6 text-lg font-medium text-[var(--btn-ink)] active:brightness-95">
             <Save className="h-5 w-5" />บันทึกการตั้งค่า
           </button>
           <button type="button" aria-label="คืนค่าเดิม"
