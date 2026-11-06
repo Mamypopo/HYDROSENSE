@@ -10,7 +10,8 @@
 | `app/api/hydrosense/route.ts` | ESP32 POST เข้ามาที่นี่ บันทึกข้อมูล และตอบ `{ pump_status }` |
 | `app/api/dashboard/route.ts` | Dashboard ดึงค่าตั้งและค่าล่าสุด 60 ครั้ง (GET) |
 | `app/api/settings/route.ts` | Dashboard แก้โหมดและค่าตั้ง (PATCH) พร้อมตรวจช่วงค่า |
-| `app/page.tsx`, `components/*` | หน้า Dashboard (มือถือเป็นหลัก) |
+| `app/page.tsx`, `components/*` | หน้า Dashboard (มือถือเป็นหลัก) ภาพฮีโร่อยู่ใน `Hero.tsx` |
+| `public/greenhouse.jpg` | **ภาพถ่ายโรงเรือนของคุณเอง** (ดูหัวข้อ "ภาพพื้นหลัง") |
 | `app/layout.tsx`, `app/hydrosense.css` | ฟอนต์ ธีมสว่าง/มืด และคลาสช่วย |
 | `mockup/dashboard.html` | ตัวอย่างดีไซน์ HTML เดี่ยว (ลบได้) |
 
@@ -48,3 +49,6 @@ curl -X POST http://localhost:3000/api/hydrosense \
 - ถ้า Deploy บน Vercel ตั้ง Function Region เป็น Singapore (sin1) ให้ใกล้ฐานข้อมูล
 - Dashboard ขึ้น "ออฟไลน์" เมื่อไม่มีข้อมูลใหม่เกิน 20 วินาที
 - ตารางโตเร็ว (ประมาณ 17,000 แถวต่อวัน) ควรตั้งลบข้อมูลเก่า ดูท้ายไฟล์ `schema.sql`
+
+## ภาพพื้นหลัง
+หน้าแรกใช้ภาพถ่ายเป็นฮีโร่ ให้ถ่ายรูปโรงเรือนจริง (แนวตั้ง ความกว้างอย่างน้อย 1200px) แล้ววางที่ `web/public/greenhouse.jpg` ถ้ายังไม่มีไฟล์ จะแสดงพื้นหลังไล่สีเขียวสำรองแทน ใช้ภาพที่ตัวเองถ่ายหรือมีลิขสิทธิ์ใช้ได้เท่านั้น ควรบีบไฟล์ให้ไม่เกิน 300KB

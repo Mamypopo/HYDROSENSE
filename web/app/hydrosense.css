@@ -1,44 +1,70 @@
-/* นำเข้าใน app/layout.tsx หลัง globals.css  —  สีและคลาสช่วยของ Dashboard */
+/* นำเข้าใน app/layout.tsx หลัง globals.css */
 :root {
-  --bg: #e9f0ed; --surface: #ffffff; --soft: #f1f6f3; --ink: #0f2a2e; --muted: #5b7378;
-  --line: rgba(15, 42, 46, 0.1); --accent: #2f7d4f;
-  --shadow: 0 1px 2px rgba(15, 42, 46, 0.05), 0 8px 24px -12px rgba(15, 42, 46, 0.18);
+  --bg: #0d2216; --sheet: #f6f8f2; --soft: #e8eedf; --ink: #14221a; --muted: #5c6b5e;
+  --line: rgba(20, 34, 26, 0.12); --accent: #4f7a17;
+  --nav: rgba(255, 255, 255, 0.82);
 }
 .dark {
-  --bg: #0a1a1d; --surface: #12292d; --soft: #183338; --ink: #e6f2ef; --muted: #8faaae;
-  --line: rgba(230, 242, 239, 0.1); --accent: #5cc38a;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px -14px rgba(0, 0, 0, 0.6);
+  --bg: #07130d; --sheet: #0f1c14; --soft: #1a2b20; --ink: #e8f0e6; --muted: #93a596;
+  --line: rgba(232, 240, 230, 0.12); --accent: #8dbb3f;
+  --nav: rgba(26, 43, 32, 0.82);
 }
 html { color-scheme: light; }
 html.dark { color-scheme: dark; }
 
-body.hs { background: var(--bg); color: var(--ink); transition: background-color 0.25s, color 0.25s; }
-.hs-tile { background: var(--surface); box-shadow: var(--shadow); border-radius: 22px; padding: 18px; }
-@media (min-width: 640px) { .hs-tile { padding: 22px; } }
+body.hs { background: var(--bg); color: var(--ink); }
+.hs-sheet { background: var(--sheet); color: var(--ink); transition: background-color 0.25s, color 0.25s; }
 .hs-soft { background: var(--soft); }
 .hs-muted { color: var(--muted); }
 .hs-line-t { border-top: 1px solid var(--line); }
 .hs-num { font-family: var(--font-display), var(--font-sans), sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 
-/* ช่องกรอก: ขนาดตัวอักษร 16px ขึ้นไป กัน iOS ซูมหน้าจอเอง */
+/* ภาพโรงเรือน: วางรูปจริงไว้ที่ public/greenhouse.jpg ถ้าไม่มีรูปจะเห็นพื้นหลังไล่สีสำรอง */
+.hs-photo {
+  background-color: #12301f;
+  background-image:
+    url('/greenhouse.jpg'),
+    radial-gradient(120% 70% at 72% 0%, rgba(255, 214, 140, 0.32), transparent 55%),
+    repeating-linear-gradient(100deg, rgba(190, 255, 170, 0.07) 0 2px, transparent 2px 46px),
+    linear-gradient(180deg, #0c2b30 0%, #17472f 48%, #2d6a24 100%);
+  background-size: cover;
+  background-position: center;
+}
+.hs-scrim {
+  background: linear-gradient(to bottom, rgba(6, 18, 12, 0.5) 0%, rgba(6, 18, 12, 0.06) 34%, rgba(6, 18, 12, 0.7) 100%);
+}
+
+/* กระจกฝ้า */
+.hs-glass {
+  background: rgba(255, 255, 255, 0.14);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  backdrop-filter: blur(18px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+.hs-glass-warn { background: rgba(224, 120, 43, 0.3); border-color: rgba(255, 190, 140, 0.6); }
+.hs-glass-bad { background: rgba(200, 55, 45, 0.38); border-color: rgba(255, 160, 150, 0.65); }
+.hs-headline { text-shadow: 0 2px 18px rgba(0, 0, 0, 0.4); }
+
+/* แคปซูลเมนูล่าง */
+.hs-pillnav {
+  background: var(--nav);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.35);
+  bottom: max(16px, env(safe-area-inset-bottom));
+}
+.hs-navbtn { color: var(--muted); }
+.hs-navbtn[aria-current='page'] { background: var(--accent); color: #fff; }
+
+/* ช่องกรอก: 16px ขึ้นไป กัน iOS ซูมเอง */
 .hs-field {
   background: var(--soft); border: 1px solid var(--line); color: var(--ink);
-  border-radius: 14px; min-height: 48px; padding: 0 14px; width: 100%; font-size: 18px;
+  border-radius: 16px; min-height: 48px; padding: 0 14px; width: 100%; font-size: 18px;
 }
-.hs-nav { color: var(--muted); }
-.hs-nav:hover { color: var(--ink); background: var(--soft); }
-.hs-nav[aria-current='page'] { color: #fff; background: var(--accent); }
 
-.hs-safe-bottom { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-
-.hs-flow { stroke-dasharray: 8 8; animation: hs-flow 0.7s linear infinite; }
-.hs-spin { transform-origin: 280px 290px; animation: hs-spin 0.9s linear infinite; }
 .hs-pulse { animation: hs-pulse 2s ease-in-out infinite; }
-@keyframes hs-flow { to { stroke-dashoffset: -16; } }
-@keyframes hs-spin { to { transform: rotate(360deg); } }
 @keyframes hs-pulse { 50% { opacity: 0.35; } }
-@media (prefers-reduced-motion: reduce) {
-  .hs-flow, .hs-spin, .hs-pulse { animation: none; }
-  body.hs { transition: none; }
-}
+@media (prefers-reduced-motion: reduce) { .hs-pulse { animation: none; } .hs-sheet { transition: none; } }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 10px; }

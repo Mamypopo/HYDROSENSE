@@ -31,7 +31,7 @@ export default function HistoryChart({ data, threshold }: { data: Point[]; thres
         </g>
       ))}
       {bands.map((b, i) => (
-        <rect key={i} x={x(b.from)} y={T} width={Math.max(3, x(b.to) - x(b.from))} height={H - T - B} rx="4" fill="#2F7D4F" fillOpacity=".18" />
+        <rect key={i} x={x(b.from)} y={T} width={Math.max(3, x(b.to) - x(b.from))} height={H - T - B} rx="4" fill="var(--accent)" fillOpacity=".18" />
       ))}
       <line x1={L} x2={W - R} y1={y(threshold)} y2={y(threshold)} stroke="#E0782B" strokeWidth="1.5" strokeDasharray="6 5" />
       <text x={W - R} y={y(threshold) - 5} textAnchor="end" fontSize="11" fill="#E0782B">เกณฑ์ {threshold}°C</text>
