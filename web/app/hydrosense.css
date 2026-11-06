@@ -35,7 +35,7 @@
 html { color-scheme: light; }
 html.dark { color-scheme: dark; }
 
-body.hs { background: var(--bg); color: var(--ink); }
+body.hs { background: var(--sheet); color: var(--ink); }
 .hs-sheet { background: var(--sheet); color: var(--ink); transition: background-color 0.25s, color 0.25s; }
 .hs-soft { background: var(--soft); }
 .hs-muted { color: var(--muted); }
