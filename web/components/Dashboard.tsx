@@ -9,7 +9,8 @@ import Swal, { type SweetAlertOptions } from 'sweetalert2';
 import type { Reading } from '@/lib/types';
 import { decidePump, type PumpSettings } from '@/lib/pump';
 import Hero from './Hero';
-import ControlCard, { mmss } from './ControlCard';
+import ControlCard from './ControlCard';
+import AutoSettings from './AutoSettings';
 import HistoryChart from './HistoryChart';
 
 type LogItem = { id: number; t: string; Icon: LucideIcon; tone: string; text: string };
@@ -73,7 +74,7 @@ export default function Dashboard() {
       else addLog(Waves, 'text-[#46B3C4]', 'น้ำกลับมาเหนือลูกลอย');
     }
     if (p.pump !== undefined && p.pump !== latest.pump_status) {
-      addLog(latest.pump_status ? Power : PowerOff, latest.pump_status ? 'text-[var(--accent)]' : 'hs-muted', `ปั๊ม${latest.pump_status ? 'เปิด' : 'ปิด'}`);
+      addLog(latest.pump_status ? Power : PowerOff, latest.pump_status ? 'text-[var(--accent)]' : 'opacity-60', `ปั๊ม${latest.pump_status ? 'เปิด' : 'ปิด'}`);
     }
     prev.current = { pump: latest.pump_status, water: latest.water_level };
   }, [latest, addLog]);
@@ -151,10 +152,6 @@ export default function Dashboard() {
     : pumpOn ? 'ผักกำลัง\nดื่มน้ำอยู่'
     : 'ทุกอย่างปกติ\nผักสบายดี';
 
-  const cycleActive = decision?.why === 'cycle';
-  const onPct = (settings.cycle_on_min / (settings.cycle_on_min + settings.cycle_off_min)) * 100;
-  const headPct = cycleActive && decision?.periodMs ? ((decision.elapsedMs ?? 0) / decision.periodMs) * 100 : 0;
-
   const nav = [
     { Icon: LayoutDashboard, label: 'ภาพรวม', current: true },
     { Icon: LineChart, label: 'ประวัติ' },
@@ -170,56 +167,35 @@ export default function Dashboard() {
         waterOk={waterOk} hot={hot}
       />
 
-      <main className="hs-sheet relative z-10 -mt-10 rounded-t-[40px] px-5 pb-36 pt-8 sm:px-8 lg:mt-0 lg:min-h-dvh lg:rounded-none lg:px-14 lg:pb-16 lg:pt-14">
-        <div className="mx-auto max-w-[620px] space-y-9">
-          <ControlCard settings={settings} decision={decision} waterOk={waterOk} pumpOn={pumpOn} onMode={onMode} onManualToggle={onManualToggle} onSave={onSave} />
+      <main className="hs-sheet relative z-10 -mt-10 rounded-t-[40px] px-4 pb-36 pt-7 sm:px-8 lg:mt-0 lg:min-h-dvh lg:rounded-none lg:px-14 lg:pb-16 lg:pt-14">
+        <div className="mx-auto max-w-[640px]">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <ControlCard settings={settings} decision={decision} waterOk={waterOk} pumpOn={pumpOn} onMode={onMode} onManualToggle={onManualToggle} />
 
-          <section aria-labelledby="cy-title" className="hs-line-t pt-8">
-            <h2 id="cy-title" className="text-xl font-semibold">รอบเปิดและพัก</h2>
-            <div className="mt-5 transition-opacity" style={{ opacity: cycleActive ? 1 : 0.35 }}>
-              <div className="relative">
-                <div className="flex h-3 overflow-hidden rounded-full">
-                  <div className="bg-[var(--accent)]" style={{ width: `${onPct}%` }} />
-                  <div className="flex-1" style={{ background: 'var(--soft)' }} />
-                </div>
-                <div className="absolute -top-1.5 h-6 w-1.5 rounded-full" style={{ background: 'var(--ink)', left: `calc(${headPct.toFixed(2)}% - 3px)` }} />
+            <AutoSettings settings={settings} decision={decision} onSave={onSave} />
+
+            <section aria-labelledby="hist-title" className="hs-b hs-b-plot col-span-2 rounded-[32px]">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <h2 id="hist-title" className="hs-display text-lg font-medium">อุณหภูมิที่ผ่านมา</h2>
+                <p className="text-sm opacity-75">แถบฟ้าคือช่วงที่ปั๊มเปิด</p>
               </div>
-              <div className="mt-3 flex justify-between text-sm">
-                <span className="font-medium">เปิด {settings.cycle_on_min} นาที</span>
-                <span className="hs-muted">พัก {settings.cycle_off_min} นาที</span>
-              </div>
-            </div>
-            <p className="hs-muted mt-3 text-sm">
-              {!decision ? 'รอข้อมูลจากอุปกรณ์'
-                : cycleActive
-                  ? (decision.remainMs === 0 ? 'ไม่ได้ตั้งเวลาพัก ปั๊มเปิดตลอด' : `ตอนนี้${decision.on ? 'อยู่ช่วงเปิด' : 'อยู่ช่วงพัก'} อีก ${mmss(decision.remainMs ?? 0)} นาทีจะสลับ`)
-                  : decision.why === 'dry' ? 'รอบเวลาหยุดไว้ เพราะน้ำแห้ง'
-                  : decision.why === 'manual' ? 'รอบเวลาไม่ทำงานในโหมดสั่งเอง'
-                  : 'รอบเวลาหยุดไว้ เพราะอากาศร้อนเกินเกณฑ์'}
-            </p>
-          </section>
+              <HistoryChart data={hist.map((r) => ({ temp: r.temperature, pump: r.pump_status }))} threshold={settings.temp_threshold} />
+            </section>
 
-          <section aria-labelledby="hist-title" className="hs-line-t pt-8">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 id="hist-title" className="text-xl font-semibold">อุณหภูมิย้อนหลัง</h2>
-              <p className="hs-muted text-sm">แถบเขียวคือช่วงที่ปั๊มเปิด</p>
-            </div>
-            <HistoryChart data={hist.map((r) => ({ temp: r.temperature, pump: r.pump_status }))} threshold={settings.temp_threshold} />
-          </section>
-
-          <section aria-labelledby="log-title" className="hs-line-t pt-8">
-            <h2 id="log-title" className="text-xl font-semibold">เหตุการณ์ล่าสุด</h2>
-            <ul className="mt-3 space-y-1">
-              {log.length === 0 && <li className="hs-muted py-2">ยังไม่มีเหตุการณ์ในรอบนี้ ระบบจะบันทึกเมื่อปั๊มหรือระดับน้ำเปลี่ยน</li>}
-              {log.map(({ id, t, Icon, tone, text }) => (
-                <li key={id} className="flex items-center gap-3 py-2">
-                  <span className={`hs-soft grid h-9 w-9 shrink-0 place-items-center rounded-xl ${tone}`}><Icon className="h-4 w-4" /></span>
-                  <span className="flex-1">{text}</span>
-                  <span className="hs-num hs-muted text-sm">{t}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+            <section aria-labelledby="log-title" className="hs-b hs-b-diary col-span-2 rounded-[24px_40px_24px_40px]">
+              <h2 id="log-title" className="hs-display text-lg font-medium">วันนี้ในฟาร์ม</h2>
+              <ul className="mt-3 space-y-2.5">
+                {log.length === 0 && <li className="py-1 opacity-80">ยังเงียบอยู่ ระบบจะจดไว้เมื่อปั๊มหรือระดับน้ำเปลี่ยน</li>}
+                {log.map(({ id, t, Icon, tone, text }) => (
+                  <li key={id} className="flex items-center gap-3">
+                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--step)] ${tone}`}><Icon className="h-[18px] w-[18px]" /></span>
+                    <span className="flex-1 leading-snug">{text}</span>
+                    <span className="hs-num text-sm opacity-70">{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
         </div>
       </main>
 

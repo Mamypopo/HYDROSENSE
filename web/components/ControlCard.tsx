@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Flame, Hand, Lock, Power, PowerOff, Save, Sparkles, Timer } from 'lucide-react';
+import { Hand, Lock, Power, PowerOff, Sparkles } from 'lucide-react';
 import type { Decision, PumpSettings } from '@/lib/pump';
+import PumpFace from './PumpFace';
 
 export const mmss = (ms: number) => {
   const s = Math.max(0, Math.round(ms / 1000));
@@ -16,48 +16,30 @@ type Props = {
   pumpOn: boolean | null;
   onMode: (m: 'auto' | 'manual') => void;
   onManualToggle: () => void;
-  onSave: (v: { th: number; on: number; off: number }) => void;
 };
 
-export default function ControlCard({ settings, decision, waterOk, pumpOn, onMode, onManualToggle, onSave }: Props) {
-  const [th, setTh] = useState(String(settings.temp_threshold));
-  const [on, setOn] = useState(String(settings.cycle_on_min));
-  const [off, setOff] = useState(String(settings.cycle_off_min));
+// ปั๊มพูดเอง: บอกว่าตอนนี้ทำอะไรและเพราะอะไร
+function speech(d: Decision | null, threshold: number): string {
+  if (!d) return 'รอข้อมูลจากอุปกรณ์อยู่นะ';
+  if (d.why === 'dry') return 'น้ำหมดแล้ว ขอหยุดก่อนนะ จะไม่เปิดจนกว่าน้ำจะกลับมา แม้ใครสั่งก็ตาม';
+  if (d.why === 'manual') return d.on ? 'ได้เลย! ทำงานให้จนกว่าคุณจะสั่งหยุดนะ' : 'พักอยู่ รอคำสั่งจากคุณ';
+  if (d.why === 'hot') return `ร้อนเกิน ${threshold}°C แล้ว รดน้ำให้ต่อเนื่องเลย`;
+  if (d.remainMs === 0) return 'อากาศกำลังดี และไม่ได้ตั้งเวลาพัก เลยเปิดไว้ตลอด';
+  return d.on
+    ? `อากาศกำลังดี เปิดตามรอบอยู่ อีก ${mmss(d.remainMs!)} นาทีจะพัก`
+    : `พักตามรอบอยู่ อีก ${mmss(d.remainMs!)} นาทีจะเปิดอีกครั้ง`;
+}
 
-  useEffect(() => {
-    setTh(String(settings.temp_threshold));
-    setOn(String(settings.cycle_on_min));
-    setOff(String(settings.cycle_off_min));
-  }, [settings.temp_threshold, settings.cycle_on_min, settings.cycle_off_min]);
-
+export default function ControlCard({ settings, decision, waterOk, pumpOn, onMode, onManualToggle }: Props) {
   const dry = waterOk === false;
-  const d = decision;
-
-  let reason: { icon: React.ReactNode; text: string } = { icon: <Timer className="mt-0.5 h-5 w-5 shrink-0" />, text: 'รอข้อมูลจากอุปกรณ์' };
-  if (d) {
-    if (d.why === 'dry') reason = { icon: <Lock className="mt-0.5 h-5 w-5 shrink-0 text-[#C8372D]" />, text: 'น้ำต่ำกว่าลูกลอย ระบบล็อกปั๊มไว้จนกว่าน้ำจะกลับมา แม้สั่งเปิดก็ไม่ทำงาน' };
-    else if (d.why === 'manual') reason = { icon: <Hand className="mt-0.5 h-5 w-5 shrink-0" />, text: d.on ? 'คุณสั่งเปิดปั๊มเอง ปั๊มจะทำงานจนกว่าคุณจะสั่งปิด' : 'คุณสั่งปิดปั๊มเอง' };
-    else if (d.why === 'hot') reason = { icon: <Flame className="mt-0.5 h-5 w-5 shrink-0 text-[#E0782B]" />, text: `อุณหภูมิเกิน ${settings.temp_threshold}°C ปั๊มเปิดต่อเนื่องจนกว่าอากาศจะเย็นลง` };
-    else reason = {
-      icon: <Timer className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />,
-      text: d.remainMs === 0 ? 'อุณหภูมิปกติ ปั๊มเปิดตลอด เพราะไม่ได้ตั้งเวลาพัก'
-        : d.on ? `อุณหภูมิปกติ ปั๊มเปิดตามรอบ อีก ${mmss(d.remainMs!)} นาทีจะพัก`
-        : `อุณหภูมิปกติ ปั๊มพักตามรอบ อีก ${mmss(d.remainMs!)} นาทีจะเปิดอีกครั้ง`,
-    };
-  }
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    onSave({ th: parseFloat(th), on: parseInt(on, 10), off: parseInt(off, 10) });
-  }
 
   const modeBtn = (m: 'auto' | 'manual', label: string, icon: React.ReactNode) => {
     const active = settings.mode === m;
     return (
       <button
         type="button" role="radio" aria-checked={active} onClick={() => onMode(m)}
-        className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full px-5 font-medium transition-colors"
-        style={{ background: active ? 'var(--accent)' : 'transparent', color: active ? '#fff' : 'var(--muted)' }}
+        className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full px-4 font-medium transition-colors"
+        style={{ background: active ? 'var(--pump-ink)' : 'transparent', color: active ? 'var(--pump-bg)' : 'inherit' }}
       >
         {icon}{label}
       </button>
@@ -65,56 +47,43 @@ export default function ControlCard({ settings, decision, waterOk, pumpOn, onMod
   };
 
   return (
-    <section aria-labelledby="ctrl-title">
+    <section aria-labelledby="pump-title" className="hs-b hs-b-pump col-span-2 rounded-[36px]">
       <div className="flex items-center justify-between gap-3">
-        <h2 id="ctrl-title" className="text-xl font-semibold">การสั่งปั๊ม</h2>
-        <span className="hs-soft inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium">
-          <span className={`h-2 w-2 rounded-full ${pumpOn ? 'hs-pulse bg-[var(--accent)]' : 'bg-[var(--muted)]'}`} />
-          {pumpOn === null ? 'รอข้อมูล' : pumpOn ? 'ปั๊มเปิดอยู่' : 'ปั๊มปิดอยู่'}
+        <h2 id="pump-title" className="hs-display text-xl font-medium">ปั๊มน้ำ</h2>
+        <span className="inline-flex items-center gap-2 rounded-full bg-[var(--step)] px-3.5 py-1.5 text-sm font-medium">
+          <span className={`h-2 w-2 rounded-full ${pumpOn ? 'hs-pulse bg-[var(--pump-acc)]' : 'bg-current opacity-40'}`} />
+          {pumpOn === null ? 'รอข้อมูล' : pumpOn ? 'เปิดอยู่' : 'พักอยู่'}
         </span>
       </div>
 
-      <div role="radiogroup" aria-label="โหมดการสั่งปั๊ม" className="hs-soft mt-4 flex w-full rounded-full p-1">
+      <div className="mt-4 flex items-start gap-3">
+        <PumpFace on={pumpOn} dry={dry} />
+        <p aria-live="polite" className="hs-bubble relative flex-1 rounded-[22px] px-4 py-3 text-[15px] leading-relaxed">
+          {speech(decision, settings.temp_threshold)}
+        </p>
+      </div>
+
+      <div role="radiogroup" aria-label="โหมดการสั่งปั๊ม" className="mt-5 flex w-full rounded-full bg-[var(--step)] p-1">
         {modeBtn('auto', 'อัตโนมัติ', <Sparkles className="h-4 w-4" />)}
         {modeBtn('manual', 'สั่งเอง', <Hand className="h-4 w-4" />)}
       </div>
 
-      <p aria-live="polite" className="mt-4 flex items-start gap-3 text-base leading-relaxed">
-        {reason.icon}<span>{reason.text}</span>
-      </p>
-
       {settings.mode === 'manual' && (
-        <div className="mt-4">
+        <div className="mt-3">
           {dry ? (
-            <button type="button" disabled className="inline-flex min-h-[56px] w-full cursor-not-allowed items-center justify-center gap-2 rounded-full bg-[var(--soft)] px-6 text-lg font-semibold text-[var(--muted)]">
+            <button type="button" disabled className="inline-flex min-h-[56px] w-full cursor-not-allowed items-center justify-center gap-2 rounded-full bg-[var(--step)] px-6 text-lg font-medium opacity-70">
               <Lock className="h-5 w-5" />ล็อกอยู่ เพราะน้ำแห้ง
             </button>
           ) : settings.manual_pump ? (
-            <button type="button" onClick={onManualToggle} className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[#C8372D] px-6 text-lg font-semibold text-white active:brightness-90">
-              <PowerOff className="h-5 w-5" />ปิดปั๊ม
+            <button type="button" onClick={onManualToggle} className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[#C8372D] px-6 text-lg font-medium text-white active:brightness-90">
+              <PowerOff className="h-5 w-5" />หยุดปั๊ม
             </button>
           ) : (
-            <button type="button" onClick={onManualToggle} className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 text-lg font-semibold text-white active:brightness-90">
+            <button type="button" onClick={onManualToggle} className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[var(--pump-acc)] px-6 text-lg font-medium text-white active:brightness-90">
               <Power className="h-5 w-5" />เปิดปั๊ม
             </button>
           )}
         </div>
-      )}
-
-      {settings.mode === 'auto' && (
-        <form onSubmit={submit} className="mt-5" noValidate>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="col-span-2 block"><span className="text-sm">เปิดเมื่ออุณหภูมิเกิน (°C)</span>
-              <input value={th} onChange={(e) => setTh(e.target.value)} type="number" inputMode="decimal" min={20} max={45} step={0.5} className="hs-field hs-num mt-1" /></label>
-            <label className="block"><span className="text-sm">เปิดครั้งละ (นาที)</span>
-              <input value={on} onChange={(e) => setOn(e.target.value)} type="number" inputMode="numeric" min={1} max={240} step={1} className="hs-field hs-num mt-1" /></label>
-            <label className="block"><span className="text-sm">พักครั้งละ (นาที)</span>
-              <input value={off} onChange={(e) => setOff(e.target.value)} type="number" inputMode="numeric" min={0} max={240} step={1} className="hs-field hs-num mt-1" /></label>
-          </div>
-          <button type="submit" className="mt-4 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 font-semibold text-white active:brightness-90">
-            <Save className="h-5 w-5" />บันทึกการตั้งค่า
-          </button>
-        </form>
       )}
     </section>
   );

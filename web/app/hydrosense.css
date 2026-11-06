@@ -1,13 +1,26 @@
 /* นำเข้าใน app/layout.tsx หลัง globals.css */
 :root {
-  --bg: #0d2216; --sheet: #f6f8f2; --soft: #e8eedf; --ink: #14221a; --muted: #5c6b5e;
-  --line: rgba(20, 34, 26, 0.12); --accent: #4f7a17;
-  --nav: rgba(255, 255, 255, 0.82);
+  --bg: #0d2216; --sheet: #f7f8fc; --soft: #eceff6; --ink: #1d2433; --muted: #667085;
+  --line: rgba(29, 36, 51, 0.1); --accent: #1f78b4;
+  --nav: rgba(255, 255, 255, 0.85);
+  /* สีตามหน้าที่ */
+  --pump-bg: #d6ecfb; --pump-ink: #12507a; --pump-acc: #1f78b4;
+  --heat-bg: #ffe2c7; --heat-ink: #8a3f0c; --heat-acc: #f08a3c;
+  --time-bg: #fff0b8; --time-ink: #6b5300; --time-acc: #d9a514;
+  --plot-bg: #e9e4fa; --plot-ink: #3f3480;
+  --diary-bg: #d8f2e3; --diary-ink: #17583a;
+  --bubble: #ffffff; --step: rgba(255, 255, 255, 0.72);
 }
 .dark {
-  --bg: #07130d; --sheet: #0f1c14; --soft: #1a2b20; --ink: #e8f0e6; --muted: #93a596;
-  --line: rgba(232, 240, 230, 0.12); --accent: #8dbb3f;
-  --nav: rgba(26, 43, 32, 0.82);
+  --bg: #07130d; --sheet: #0f1620; --soft: #1a2230; --ink: #e9edf5; --muted: #98a2b3;
+  --line: rgba(233, 237, 245, 0.12); --accent: #5db5ea;
+  --nav: rgba(26, 34, 48, 0.85);
+  --pump-bg: #12384f; --pump-ink: #bfe3f7; --pump-acc: #5db5ea;
+  --heat-bg: #4a2a12; --heat-ink: #ffd9b8; --heat-acc: #f59a52;
+  --time-bg: #3e3410; --time-ink: #ffe9a3; --time-acc: #e8bd3a;
+  --plot-bg: #2a2550; --plot-ink: #d9d2ff;
+  --diary-bg: #153b2a; --diary-ink: #cdefd9;
+  --bubble: #1a2230; --step: rgba(255, 255, 255, 0.12);
 }
 html { color-scheme: light; }
 html.dark { color-scheme: dark; }
@@ -69,3 +82,24 @@ body.hs { background: var(--bg); color: var(--ink); }
 @keyframes hs-pulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .hs-pulse { animation: none; } .hs-sheet { transition: none; } }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 10px; }
+
+/* บล็อกสีตามหน้าที่ มุมโค้งไม่เท่ากันโดยตั้งใจ */
+.hs-b { padding: 20px; }
+@media (min-width: 640px) { .hs-b { padding: 24px; } }
+.hs-b-pump { background: var(--pump-bg); color: var(--pump-ink); }
+.hs-b-heat { background: var(--heat-bg); color: var(--heat-ink); }
+.hs-b-time { background: var(--time-bg); color: var(--time-ink); }
+.hs-b-plot { background: var(--plot-bg); color: var(--plot-ink); }
+.hs-b-diary { background: var(--diary-bg); color: var(--diary-ink); }
+.hs-bubble { background: var(--bubble); color: var(--ink); }
+.hs-bubble::before {
+  content: ''; position: absolute; left: -7px; top: 22px; width: 14px; height: 14px;
+  background: var(--bubble); transform: rotate(45deg); border-radius: 3px;
+}
+.hs-step {
+  display: grid; place-items: center; width: 48px; height: 48px; border-radius: 999px;
+  background: var(--step); color: inherit; transition: transform 0.12s;
+}
+.hs-step:active { transform: scale(0.9); }
+.hs-step:disabled { opacity: 0.35; }
+@media (prefers-reduced-motion: reduce) { .hs-step { transition: none; } }
