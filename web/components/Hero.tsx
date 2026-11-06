@@ -1,10 +1,15 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Droplets, Moon, Sprout, Sun, Thermometer, Waves } from 'lucide-react';
 
+// three.js โหลดแยก ไม่ทำให้หน้าแรกช้า และไม่รันบนเซิร์ฟเวอร์
+const TankScene = dynamic(() => import('./TankScene'), { ssr: false });
+
 type Props = {
+  pumpOn: boolean | null;
   today: string;
   online: boolean;
   agoSec: number | null;
@@ -29,7 +34,7 @@ function Chip({ icon, value, unit, label, tone = '' }: { icon: ReactNode; value:
   );
 }
 
-export default function Hero({ today, online, agoSec, dark, onToggleTheme, headline, temp, hum, waterOk, hot }: Props) {
+export default function Hero({ pumpOn, today, online, agoSec, dark, onToggleTheme, headline, temp, hum, waterOk, hot }: Props) {
   const reduce = useReducedMotion();
   // จังหวะเดียวที่ขยับเอง: ภาพเลื่อนเข้า แล้วชิปค่อยๆ ขึ้นทีละใบ
   const photoAnim = reduce ? {} : { initial: { scale: 1.12 }, animate: { scale: 1 }, transition: { duration: 1.8, ease: [0.2, 0.7, 0.2, 1] as const } };
@@ -39,7 +44,8 @@ export default function Hero({ today, online, agoSec, dark, onToggleTheme, headl
   return (
     <header className="relative isolate flex min-h-[80svh] flex-col justify-between overflow-hidden p-5 pb-16 text-white sm:p-8 sm:pb-20 lg:sticky lg:top-0 lg:h-dvh lg:min-h-0 lg:rounded-r-[44px] lg:pb-10">
       <motion.div className="hs-photo absolute inset-0 -z-20" {...photoAnim} />
-      <div className="hs-scrim absolute inset-0 -z-10" />
+      <TankScene waterOk={waterOk} pumpOn={pumpOn} hot={hot} />
+      <div className="hs-scrim absolute inset-0 -z-[4]" />
 
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">

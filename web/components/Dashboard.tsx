@@ -164,7 +164,7 @@ export default function Dashboard() {
   return (
     <div className="lg:grid lg:grid-cols-[minmax(420px,44%)_1fr]">
       <Hero
-        today={today} online={online} agoSec={agoSec} dark={dark} onToggleTheme={toggleTheme}
+        pumpOn={pumpOn} today={today} online={online} agoSec={agoSec} dark={dark} onToggleTheme={toggleTheme}
         headline={headline} temp={latest ? latest.temperature : null} hum={latest ? latest.humidity : null}
         waterOk={waterOk} hot={hot}
       />
