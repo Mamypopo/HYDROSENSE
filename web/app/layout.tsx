@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from 'next';
-import { Anuphan, Bricolage_Grotesque } from 'next/font/google';
+import { Anuphan, Mitr } from 'next/font/google';
 import './globals.css';
 import './hydrosense.css';
 
 const sans = Anuphan({ subsets: ['thai', 'latin'], variable: '--font-sans', display: 'swap' });
-const display = Bricolage_Grotesque({ subsets: ['latin'], variable: '--font-display', display: 'swap' });
+const display = Mitr({ subsets: ['thai', 'latin'], weight: ['400', '500', '600'], variable: '--font-display', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'HydroSense',

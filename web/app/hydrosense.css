@@ -21,17 +21,17 @@ body.hs { background: var(--bg); color: var(--ink); }
 
 /* ภาพโรงเรือน: วางรูปจริงไว้ที่ public/greenhouse.jpg ถ้าไม่มีรูปจะเห็นพื้นหลังไล่สีสำรอง */
 .hs-photo {
-  background-color: #12301f;
+  background-color: #2a9a78;
   background-image:
     url('/greenhouse.jpg'),
-    radial-gradient(120% 70% at 72% 0%, rgba(255, 214, 140, 0.32), transparent 55%),
-    repeating-linear-gradient(100deg, rgba(190, 255, 170, 0.07) 0 2px, transparent 2px 46px),
-    linear-gradient(180deg, #0c2b30 0%, #17472f 48%, #2d6a24 100%);
+    radial-gradient(60% 40% at 82% 8%, rgba(255, 236, 170, 0.75), rgba(255, 236, 170, 0) 70%),
+    radial-gradient(50% 35% at 10% 62%, rgba(120, 230, 190, 0.4), transparent 70%),
+    linear-gradient(180deg, #46bf9c 0%, #2a9a78 45%, #1b6b52 100%);
   background-size: cover;
   background-position: center;
 }
 .hs-scrim {
-  background: linear-gradient(to bottom, rgba(6, 18, 12, 0.5) 0%, rgba(6, 18, 12, 0.06) 34%, rgba(6, 18, 12, 0.7) 100%);
+  background: linear-gradient(to bottom, rgba(6, 40, 28, 0.28) 0%, rgba(6, 40, 28, 0) 32%, rgba(6, 40, 28, 0.55) 100%);
 }
 
 /* กระจกฝ้า */
@@ -45,7 +45,8 @@ body.hs { background: var(--bg); color: var(--ink); }
 }
 .hs-glass-warn { background: rgba(224, 120, 43, 0.3); border-color: rgba(255, 190, 140, 0.6); }
 .hs-glass-bad { background: rgba(200, 55, 45, 0.38); border-color: rgba(255, 160, 150, 0.65); }
-.hs-headline { text-shadow: 0 2px 18px rgba(0, 0, 0, 0.4); }
+.hs-display { font-family: var(--font-display), var(--font-sans), sans-serif; }
+.hs-headline { font-family: var(--font-display), var(--font-sans), sans-serif; text-shadow: 0 2px 14px rgba(0, 50, 35, 0.35); }
 
 /* แคปซูลเมนูล่าง */
 .hs-pillnav {

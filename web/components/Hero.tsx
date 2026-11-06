@@ -24,7 +24,7 @@ type Props = {
 
 function Chip({ icon, value, unit, label, tone = '' }: { icon: ReactNode; value: string; unit?: string; label: string; tone?: string }) {
   return (
-    <div className={`hs-glass ${tone} rounded-[22px] px-3.5 py-3 sm:px-4`}>
+    <div className={`hs-glass ${tone} rounded-[26px] px-3.5 py-3 sm:px-4`}>
       <div className="flex items-center gap-1.5 text-white/80">{icon}<span className="text-xs sm:text-sm">{label}</span></div>
       <p className="mt-1.5 leading-none">
         <span className="hs-num text-[28px] font-semibold sm:text-[32px]">{value}</span>
@@ -67,7 +67,7 @@ export default function Hero({ pumpOn, today, online, agoSec, dark, onToggleThem
       </div>
 
       <div>
-        <h1 className="hs-headline whitespace-pre-line text-[40px] font-semibold leading-[1.12] sm:text-5xl">{headline}</h1>
+        <h1 className="hs-headline whitespace-pre-line text-[38px] font-medium leading-[1.2] sm:text-5xl">{headline}</h1>
         <p className="mt-3 text-white/80">
           {agoSec === null ? 'ยังไม่มีข้อมูลจากอุปกรณ์' : `อัปเดตล่าสุด ${agoSec} วินาทีก่อน`}
         </p>

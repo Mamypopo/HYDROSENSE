@@ -144,10 +144,11 @@ export default function Dashboard() {
   const online = agoSec !== null && agoSec < 20;
   const hot = latest ? latest.temperature > settings.temp_threshold : false;
 
-  const headline = !latest ? 'รอข้อมูล\nจากอุปกรณ์'
-    : waterOk === false ? 'น้ำแห้ง\nปั๊มถูกล็อกไว้'
-    : hot && pumpOn ? 'อากาศร้อน\nปั๊มกำลังรดน้ำ'
-    : pumpOn ? 'ผักกำลัง\nได้น้ำ'
+  const headline = !latest ? 'รอข้อมูล\nจากอุปกรณ์นะ'
+    : waterOk === false ? 'น้ำแห้งแล้ว\nปั๊มพักก่อนนะ'
+    : hot && pumpOn ? 'ร้อนจัง\nกำลังรดน้ำให้'
+    : hot ? 'ร้อนจัง\nรอปั๊มทำงาน'
+    : pumpOn ? 'ผักกำลัง\nดื่มน้ำอยู่'
     : 'ทุกอย่างปกติ\nผักสบายดี';
 
   const cycleActive = decision?.why === 'cycle';
@@ -169,7 +170,7 @@ export default function Dashboard() {
         waterOk={waterOk} hot={hot}
       />
 
-      <main className="hs-sheet relative z-10 -mt-9 rounded-t-[32px] px-5 pb-36 pt-8 sm:px-8 lg:mt-0 lg:min-h-dvh lg:rounded-none lg:px-14 lg:pb-16 lg:pt-14">
+      <main className="hs-sheet relative z-10 -mt-10 rounded-t-[40px] px-5 pb-36 pt-8 sm:px-8 lg:mt-0 lg:min-h-dvh lg:rounded-none lg:px-14 lg:pb-16 lg:pt-14">
         <div className="mx-auto max-w-[620px] space-y-9">
           <ControlCard settings={settings} decision={decision} waterOk={waterOk} pumpOn={pumpOn} onMode={onMode} onManualToggle={onManualToggle} onSave={onSave} />
 
