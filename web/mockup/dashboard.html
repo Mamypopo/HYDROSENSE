@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HydroSense Dashboard (ตัวอย่าง)</title>
+
+<!--
+  แนวคิดดีไซน์ (เวอร์ชันเว็บแอปสมัยใหม่)
+  โครง   : เมนูด้านข้าง (มือถือเป็นแถบล่าง) + Bento grid ที่แต่ละช่องมีขนาดตามความสำคัญ + Dark mode
+  จุดเด่น : ถังน้ำสีเข้ม เป็นช่องใหญ่ช่องเดียวที่ตัดกับพื้น ที่เหลือเบาและเงียบ
+  สี     : น้ำลึก #0F2A2E / ใบผัก #2F7D4F / น้ำสะอาด #46B3C4 / ร้อน #E0782B / แห้ง #C8372D
+  ตัวอักษร: Anuphan (ข้อความ) + Bricolage Grotesque (ตัวเลข)
+  ข้อมูลในหน้านี้เป็นข้อมูลจำลอง ใช้ดู Layout และพฤติกรรมเท่านั้น
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: {
+    colors: { deep:'#0F2A2E', leaf:'#2F7D4F', water:'#46B3C4', heat:'#E0782B', dry:'#C8372D' },
+    fontFamily: { sans:['Anuphan','sans-serif'], display:['"Bricolage Grotesque"','Anuphan','sans-serif'] }
+  } } }
+</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+  :root {
+    --bg:#E9F0ED; --surface:#FFFFFF; --soft:#F1F6F3; --ink:#0F2A2E; --muted:#5B7378; --line:rgba(15,42,46,.10);
+    --accent:#2F7D4F; --shadow:0 1px 2px rgba(15,42,46,.05), 0 8px 24px -12px rgba(15,42,46,.18);
+  }
+  .dark {
+    --bg:#0A1A1D; --surface:#12292D; --soft:#183338; --ink:#E6F2EF; --muted:#8FAAAE; --line:rgba(230,242,239,.10);
+    --accent:#5CC38A; --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+  }
+  html { color-scheme: light; } .dark { color-scheme: dark; }
+  body { background:var(--bg); color:var(--ink); transition: background-color .25s, color .25s; }
+  .tile { background:var(--surface); box-shadow:var(--shadow); border-radius:22px; padding:22px; }
+  .soft { background:var(--soft); }
+  .muted { color:var(--muted); }
+  .line-t { border-top:1px solid var(--line); }
+  .num { font-family:'Bricolage Grotesque','Anuphan',sans-serif; font-variant-numeric:tabular-nums; letter-spacing:-0.02em; }
+  :focus-visible { outline:3px solid var(--accent); outline-offset:3px; border-radius:10px; }
+  .field { background:var(--soft); border:1px solid var(--line); color:var(--ink); border-radius:14px; min-height:48px; padding:0 14px; width:100%; }
+  .navbtn { color:var(--muted); }
+  .navbtn:hover { color:var(--ink); background:var(--soft); }
+  .navbtn[aria-current="page"] { color:#fff; background:var(--accent); }
+
+  .flow { stroke-dasharray:8 8; animation:flow .7s linear infinite; }
+  .spin { transform-origin:280px 290px; animation:spin .9s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset:-16; } }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .water { transition:y .9s cubic-bezier(.3,.7,.2,1), height .9s cubic-bezier(.3,.7,.2,1); }
+  .pulse-dot { animation:pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity:.35; } }
+  @media (prefers-reduced-motion: reduce) { .flow,.spin,.pulse-dot { animation:none; } .water { transition:none; } body { transition:none; } }
+</style>
+</head>
+
+<body class="font-sans antialiased">
+
+<!-- เมนู: ซ้ายบนจอใหญ่ / ล่างบนมือถือ -->
+<nav aria-label="เมนูหลัก" class="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t px-2 py-2 lg:inset-y-0 lg:left-0 lg:right-auto lg:w-[92px] lg:flex-col lg:justify-start lg:gap-2 lg:border-r lg:border-t-0 lg:px-3 lg:py-6"
+     style="background:var(--surface); border-color:var(--line)">
+  <div class="mb-4 hidden place-items-center lg:grid">
+    <span class="grid h-11 w-11 place-items-center rounded-2xl bg-deep text-water"><i data-lucide="sprout" class="h-6 w-6"></i></span>
+  </div>
+  <button type="button" class="navbtn flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-2 text-xs font-medium lg:flex-none" aria-current="page"><i data-lucide="layout-dashboard" class="h-5 w-5"></i>ภาพรวม</button>
+  <button type="button" data-soon class="navbtn flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-2 text-xs font-medium lg:flex-none"><i data-lucide="line-chart" class="h-5 w-5"></i>ประวัติ</button>
+  <button type="button" data-soon class="navbtn flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-2 text-xs font-medium lg:flex-none"><i data-lucide="cpu" class="h-5 w-5"></i>อุปกรณ์</button>
+  <button type="button" data-soon class="navbtn flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-2 text-xs font-medium lg:flex-none"><i data-lucide="settings" class="h-5 w-5"></i>ตั้งค่า</button>
+</nav>
+
+<div class="px-4 pb-28 pt-5 sm:px-6 lg:pb-10 lg:pl-[124px] lg:pr-8 lg:pt-8">
+  <div class="mx-auto max-w-[1180px]">
+
+    <!-- ส่วนหัว -->
+    <header class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold sm:text-3xl">ภาพรวมโรงเรือน 1</h1>
+        <p id="today" class="muted mt-1"></p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="tile flex items-center gap-2 !rounded-full !px-4 !py-2 text-sm" role="status">
+          <span class="pulse-dot h-2.5 w-2.5 rounded-full bg-leaf"></span>
+          <span class="font-medium">ESP32 ออนไลน์</span>
+          <span class="muted hidden sm:inline">อัปเดต <span id="ago">0</span> วินาทีก่อน</span>
+        </div>
+        <button type="button" id="themeBtn" class="tile grid h-11 w-11 place-items-center !rounded-full !p-0" aria-label="สลับโหมดมืด/สว่าง"><i data-lucide="moon" class="h-5 w-5"></i></button>
+      </div>
+    </header>
+
+    <!-- Bento grid -->
+    <main class="mt-6 grid gap-4 lg:grid-cols-12">
+
+      <!-- ถังน้ำ -->
+      <section aria-labelledby="tank-title" class="relative overflow-hidden rounded-[30px] bg-deep p-6 text-white shadow-xl lg:col-span-4 lg:row-span-3">
+        <div class="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-water/20 blur-3xl"></div>
+        <h2 id="tank-title" class="relative text-lg font-semibold">ถังน้ำและปั๊ม</h2>
+        <svg viewBox="0 0 320 360" class="relative mx-auto mt-2 w-full max-w-[360px]" role="img" aria-label="ภาพถังน้ำและปั๊ม">
+          <defs><clipPath id="tankClip"><rect x="20" y="20" width="150" height="300" rx="16"/></clipPath>
+            <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FD0DE"/><stop offset="1" stop-color="#2E92A5"/></linearGradient></defs>
+          <g clip-path="url(#tankClip)">
+            <rect id="water" class="water" x="20" y="320" width="150" height="0" fill="url(#wg)"/>
+            <rect id="waterTop" class="water" x="20" y="320" width="150" height="4" fill="#C9F1F7"/>
+          </g>
+          <rect x="20" y="20" width="150" height="300" rx="16" fill="none" stroke="#8DBFC5" stroke-width="3"/>
+          <line x1="20" y1="215" x2="170" y2="215" stroke="#fff" stroke-opacity=".8" stroke-width="2" stroke-dasharray="5 5"/>
+          <circle cx="150" cy="215" r="9" fill="#fff"/>
+          <text x="30" y="207" fill="#fff" font-size="13" font-family="Anuphan">ลูกลอย</text>
+          <path d="M170 290 H245" stroke="#3E6A70" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path id="pipeFlow" d="M170 290 H245" stroke="#C9F1F7" stroke-width="4" fill="none" class="flow" style="display:none"/>
+          <circle cx="280" cy="290" r="32" fill="#16393E" stroke="#8DBFC5" stroke-width="3"/>
+          <g id="impeller" stroke="#fff" stroke-width="5" stroke-linecap="round">
+            <line x1="280" y1="290" x2="280" y2="270"/><line x1="280" y1="290" x2="297" y2="300"/><line x1="280" y1="290" x2="263" y2="300"/>
+          </g>
+          <text x="280" y="342" text-anchor="middle" fill="#fff" font-size="14" font-family="Anuphan">ปั๊มน้ำ</text>
+        </svg>
+        <div class="relative mt-3 grid grid-cols-2 gap-3">
+          <div class="rounded-2xl bg-white/10 p-4">
+            <p class="text-sm text-white/70">ระดับน้ำ</p>
+            <p id="waterText" class="num mt-1 text-2xl font-bold">น้ำปกติ</p>
+            <p id="waterNote" class="mt-1 text-sm text-white/70">เหนือลูกลอย</p>
+          </div>
+          <div class="rounded-2xl bg-white/10 p-4">
+            <p class="text-sm text-white/70">ปั๊มน้ำ</p>
+            <p id="pumpText" class="num mt-1 text-2xl font-bold">ปิด</p>
+            <p class="mt-1 text-sm text-white/70">สั่งใหม่ทุก 5 วินาที</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- อุณหภูมิ -->
+      <section aria-labelledby="t-title" class="tile lg:col-span-4">
+        <div class="flex items-center gap-2"><i data-lucide="thermometer" class="h-5 w-5 text-heat"></i><h2 id="t-title" class="font-semibold">อุณหภูมิ</h2></div>
+        <div class="relative mx-auto mt-2 w-[190px]">
+          <svg viewBox="0 0 140 140" class="w-full" aria-hidden="true">
+            <circle cx="70" cy="70" r="54" fill="none" stroke="var(--soft)" stroke-width="12" stroke-linecap="round" stroke-dasharray="254.5 339.3" transform="rotate(135 70 70)"/>
+            <circle id="tArc" cx="70" cy="70" r="54" fill="none" stroke="#2F7D4F" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 339.3" transform="rotate(135 70 70)" style="transition:stroke-dasharray .7s, stroke .4s"/>
+            <g id="tTick" transform="rotate(135 70 70)"><line x1="70" y1="70" x2="70" y2="70" /><line id="tTickLine" x1="128" y1="70" x2="138" y2="70" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/></g>
+          </svg>
+          <div class="absolute inset-0 grid place-items-center text-center">
+            <div><p><span id="temp" class="num text-5xl font-bold">29.4</span><span class="num text-xl muted">°C</span></p></div>
+          </div>
+        </div>
+        <p class="muted -mt-2 text-center text-sm">ขีดดำคือเกณฑ์ <span id="thLabel">32</span>°C</p>
+      </section>
+
+      <!-- ความชื้น -->
+      <section aria-labelledby="h-title" class="tile lg:col-span-4">
+        <div class="flex items-center gap-2"><i data-lucide="droplets" class="h-5 w-5 text-water"></i><h2 id="h-title" class="font-semibold">ความชื้นอากาศ</h2></div>
+        <div class="relative mx-auto mt-2 w-[190px]">
+          <svg viewBox="0 0 140 140" class="w-full" aria-hidden="true">
+            <circle cx="70" cy="70" r="54" fill="none" stroke="var(--soft)" stroke-width="12" stroke-linecap="round" stroke-dasharray="254.5 339.3" transform="rotate(135 70 70)"/>
+            <circle id="hArc" cx="70" cy="70" r="54" fill="none" stroke="#46B3C4" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 339.3" transform="rotate(135 70 70)" style="transition:stroke-dasharray .7s"/>
+          </svg>
+          <div class="absolute inset-0 grid place-items-center text-center">
+            <p><span id="hum" class="num text-5xl font-bold">74</span><span class="num text-xl muted">%</span></p>
+          </div>
+        </div>
+        <p class="muted -mt-2 text-center text-sm">ผักส่วนใหญ่สบายที่ 60 ถึง 80%</p>
+      </section>
+
+      <!-- ควบคุมปั๊ม -->
+      <section aria-labelledby="ctrl-title" class="tile lg:col-span-8">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="ctrl-title" class="text-lg font-semibold">การสั่งปั๊ม</h2>
+          <div role="radiogroup" aria-label="โหมดการสั่งปั๊ม" class="soft inline-flex rounded-full p-1">
+            <button type="button" id="modeAuto" role="radio" data-mode="auto" class="inline-flex min-h-[44px] items-center gap-2 rounded-full px-5 font-medium transition-colors"><i data-lucide="sparkles" class="h-4 w-4"></i>อัตโนมัติ</button>
+            <button type="button" id="modeManual" role="radio" data-mode="manual" class="inline-flex min-h-[44px] items-center gap-2 rounded-full px-5 font-medium transition-colors"><i data-lucide="hand" class="h-4 w-4"></i>สั่งเอง</button>
+          </div>
+        </div>
+
+        <p id="reason" aria-live="polite" class="soft mt-4 flex items-start gap-3 rounded-2xl px-5 py-4 text-base sm:text-lg"></p>
+
+        <div id="manualBox" class="mt-4 hidden">
+          <button type="button" id="manualBtn" class="inline-flex min-h-[52px] items-center gap-2 rounded-2xl px-6 text-lg font-semibold text-white transition-colors"></button>
+        </div>
+
+        <form id="autoBox" class="line-t mt-5 hidden pt-5" novalidate>
+          <p class="muted mb-3 text-sm">ตั้งค่าโหมดอัตโนมัติ</p>
+          <div class="grid gap-4 sm:grid-cols-3">
+            <label class="block"><span class="text-sm">เปิดเมื่ออุณหภูมิเกิน (°C)</span><input id="inTh" type="number" min="20" max="45" step="0.5" value="32" class="field num mt-1 text-xl"></label>
+            <label class="block"><span class="text-sm">เปิดครั้งละ (นาที)</span><input id="inOn" type="number" min="1" max="240" step="1" value="15" class="field num mt-1 text-xl"></label>
+            <label class="block"><span class="text-sm">พักครั้งละ (นาที)</span><input id="inOff" type="number" min="0" max="240" step="1" value="15" class="field num mt-1 text-xl"></label>
+          </div>
+          <button type="submit" class="mt-4 inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-leaf px-5 font-semibold text-white hover:bg-[#276a42]"><i data-lucide="save" class="h-5 w-5"></i>บันทึกการตั้งค่า</button>
+        </form>
+      </section>
+
+      <!-- กราฟ -->
+      <section aria-labelledby="hist-title" class="tile lg:col-span-8">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="hist-title" class="text-lg font-semibold">อุณหภูมิย้อนหลัง</h2>
+          <p class="muted text-sm">แถบเขียวคือช่วงที่ปั๊มเปิด</p>
+        </div>
+        <svg id="chart" viewBox="0 0 600 170" class="mt-3 w-full" role="img" aria-label="กราฟอุณหภูมิย้อนหลัง"></svg>
+      </section>
+
+      <!-- รอบเวลา -->
+      <section aria-labelledby="cy-title" class="tile lg:col-span-5">
+        <h2 id="cy-title" class="text-lg font-semibold">รอบเปิดและพัก</h2>
+        <div id="cycleWrap" class="mt-5 transition-opacity">
+          <div class="relative">
+            <div class="flex h-4 overflow-hidden rounded-full">
+              <div id="cOn" class="bg-leaf"></div><div id="cOff" class="flex-1" style="background:var(--soft)"></div>
+            </div>
+            <div id="cHead" class="absolute -top-1.5 h-7 w-1.5 rounded-full" style="background:var(--ink); left:0"></div>
+          </div>
+          <div class="mt-3 flex justify-between text-sm"><span id="cOnLbl" class="font-medium"></span><span id="cOffLbl" class="muted"></span></div>
+        </div>
+        <p id="cycleNote" class="muted mt-4 text-sm"></p>
+      </section>
+
+      <!-- บันทึกเหตุการณ์ -->
+      <section aria-labelledby="log-title" class="tile lg:col-span-7">
+        <h2 id="log-title" class="text-lg font-semibold">เหตุการณ์ล่าสุด</h2>
+        <ul id="log" class="mt-3 space-y-1"></ul>
+      </section>
+
+      <!-- ปุ่มจำลอง -->
+      <section class="rounded-[22px] border border-dashed p-5 lg:col-span-12" style="border-color:var(--line)">
+        <p class="muted text-sm">หน้านี้ใช้ข้อมูลจำลอง ลองกดปุ่มเพื่อดูว่าหน้าจอเปลี่ยนอย่างไร</p>
+        <div class="mt-3 flex flex-wrap gap-3">
+          <button type="button" id="simDry" class="tile inline-flex min-h-[44px] items-center gap-2 !rounded-xl !px-4 !py-0 font-medium"></button>
+          <button type="button" id="simHot" class="tile inline-flex min-h-[44px] items-center gap-2 !rounded-xl !px-4 !py-0 font-medium"></button>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script type="module">
+  let motionAnimate = null;
+  try { ({ animate: motionAnimate } = await import('https://cdn.jsdelivr.net/npm/motion@11/+esm')); } catch (e) {}
+
+  const $ = (id) => document.getElementById(id);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const Toast = Swal.mixin({ toast:true, position:'top-end', showConfirmButton:false, timer:3200, timerProgressBar:true });
+  const swalColors = () => document.documentElement.classList.contains('dark') ? { background:'#12292D', color:'#E6F2EF' } : {};
+  const fire = (o) => Swal.fire({ confirmButtonColor:'#2F7D4F', ...swalColors(), ...o });
+
+  // ---------- สถานะจำลอง (ของจริงมาจาก Supabase) ----------
+  const S = {
+    mode:'auto', manualPump:false, threshold:32, onMin:15, offMin:15,
+    anchor: Date.now() - 7*60000,
+    temp:29.4, hum:74, water:true, forceHot:false,
+    hist:[], lastUpdate:Date.now(), lastPump:undefined, log:[],
+  };
+
+  // ---------- กติกาเดียวกับ app/api/hydrosense/route.ts ----------
+  function decide(now = Date.now()) {
+    if (!S.water) return { on:false, why:'dry' };
+    if (S.mode === 'manual') return { on:S.manualPump, why:'manual' };
+    if (S.temp > S.threshold) return { on:true, why:'hot' };
+    const onMs = S.onMin*60000, offMs = S.offMin*60000, period = onMs + offMs;
+    if (offMs === 0) return { on:true, why:'cycle', remain:0, el:0, period };
+    const el = (((now - S.anchor) % period) + period) % period;
+    return el < onMs ? { on:true, why:'cycle', remain:onMs-el, el, period } : { on:false, why:'cycle', remain:period-el, el, period };
+  }
+  const mmss = (ms) => { const s = Math.max(0, Math.round(ms/1000)); return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0'); };
+  const hhmm = () => new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
+
+  function addLog(icon, tone, text) {
+    S.log.unshift({ t:hhmm(), icon, tone, text }); S.log = S.log.slice(0, 6); renderLog();
+  }
+  function renderLog() {
+    $('log').innerHTML = S.log.map(e => `
+      <li class="flex items-center gap-3 rounded-xl px-2 py-2">
+        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full soft ${e.tone}"><i data-lucide="${e.icon}" class="h-4 w-4"></i></span>
+        <span class="flex-1">${e.text}</span><span class="num muted text-sm">${e.t}</span>
+      </li>`).join('') || '<li class="muted px-2 py-2">ยังไม่มีเหตุการณ์ ลองกดปุ่มจำลองด้านล่าง</li>';
+    lucide.createIcons();
+  }
+
+  // ---------- วาดหน้าจอ ----------
+  const ARC = 254.5;
+  function setWater(level) {
+    const top = 320 - level*210;
+    $('water').setAttribute('y', top); $('water').setAttribute('height', 320 - top);
+    $('waterTop').setAttribute('y', top);
+  }
+
+  function renderStatic() {
+    const d = decide();
+
+    $('temp').textContent = S.temp.toFixed(1);
+    const hot = S.temp > S.threshold;
+    $('temp').style.color = hot ? '#E0782B' : '';
+    const tf = Math.min(1, Math.max(0, (S.temp-20)/20));
+    $('tArc').setAttribute('stroke-dasharray', `${ARC*tf} 339.3`);
+    $('tArc').setAttribute('stroke', hot ? '#E0782B' : '#2F7D4F');
+    const thf = Math.min(1, Math.max(0, (S.threshold-20)/20));
+    $('tTick').setAttribute('transform', `rotate(${135 + 270*thf} 70 70)`);
+    $('thLabel').textContent = S.threshold;
+
+    $('hum').textContent = Math.round(S.hum);
+    $('hArc').setAttribute('stroke-dasharray', `${ARC*S.hum/100} 339.3`);
+
+    if (S.firstDraw) setWater(S.water ? 1 : 0.18);
+    $('waterText').textContent = S.water ? 'น้ำปกติ' : 'น้ำแห้ง';
+    $('waterText').style.color = S.water ? '' : '#FF8A80';
+    $('waterNote').textContent = S.water ? 'เหนือลูกลอย' : 'ต่ำกว่าลูกลอย';
+    $('pumpText').textContent = d.on ? 'เปิด' : 'ปิด';
+    $('pipeFlow').style.display = d.on ? '' : 'none';
+    $('impeller').classList.toggle('spin', d.on);
+
+    for (const id of ['modeAuto','modeManual']) {
+      const on = (S.mode === $(id).dataset.mode);
+      $(id).setAttribute('aria-checked', on);
+      $(id).style.background = on ? 'var(--accent)' : 'transparent';
+      $(id).style.color = on ? '#fff' : 'var(--muted)';
+    }
+    $('manualBox').classList.toggle('hidden', S.mode !== 'manual');
+    $('autoBox').classList.toggle('hidden', S.mode !== 'auto');
+
+    const b = $('manualBtn');
+    if (!S.water) {
+      b.disabled = true; b.className = 'inline-flex min-h-[52px] cursor-not-allowed items-center gap-2 rounded-2xl bg-deep/30 px-6 text-lg font-semibold text-white';
+      b.innerHTML = '<i data-lucide="lock" class="h-5 w-5"></i>ล็อกอยู่ เพราะน้ำแห้ง';
+    } else if (S.manualPump) {
+      b.disabled = false; b.className = 'inline-flex min-h-[52px] items-center gap-2 rounded-2xl bg-dry px-6 text-lg font-semibold text-white hover:bg-[#a92d24]';
+      b.innerHTML = '<i data-lucide="power-off" class="h-5 w-5"></i>ปิดปั๊ม';
+    } else {
+      b.disabled = false; b.className = 'inline-flex min-h-[52px] items-center gap-2 rounded-2xl bg-leaf px-6 text-lg font-semibold text-white hover:bg-[#276a42]';
+      b.innerHTML = '<i data-lucide="power" class="h-5 w-5"></i>เปิดปั๊ม';
+    }
+
+    $('simDry').innerHTML = S.water ? '<i data-lucide="beaker" class="h-5 w-5"></i>จำลองน้ำแห้ง' : '<i data-lucide="waves" class="h-5 w-5"></i>จำลองน้ำกลับมา';
+    $('simHot').innerHTML = S.forceHot ? '<i data-lucide="snowflake" class="h-5 w-5"></i>จำลองอากาศปกติ' : '<i data-lucide="sun" class="h-5 w-5"></i>จำลองอากาศร้อน';
+
+    // บันทึกเมื่อปั๊มเปลี่ยนสถานะ
+    if (S.lastPump !== undefined && S.lastPump !== d.on) {
+      const why = { dry:'น้ำแห้ง', manual:'คุณสั่ง', hot:'อากาศร้อน', cycle:'ตามรอบ' }[d.why];
+      addLog(d.on ? 'power' : 'power-off', d.on ? 'text-leaf' : 'muted', `ปั๊ม${d.on ? 'เปิด' : 'ปิด'} (${why})`);
+    }
+    S.lastPump = d.on;
+
+    renderReason();
+    lucide.createIcons();
+  }
+
+  function renderReason() {
+    const d = decide();
+    const R = {
+      dry:    ['lock','text-dry', 'ปั๊มปิดอยู่ เพราะน้ำต่ำกว่าลูกลอย ระบบล็อกปั๊มไว้จนกว่าน้ำจะกลับมา แม้สั่งเปิดก็ไม่ทำงาน'],
+      manual: ['hand','', d.on ? 'คุณสั่งเปิดปั๊มเอง ปั๊มจะทำงานจนกว่าคุณจะสั่งปิด' : 'คุณสั่งปิดปั๊มเอง'],
+      hot:    ['flame','text-heat', `อุณหภูมิเกิน ${S.threshold}°C ปั๊มเปิดต่อเนื่องจนกว่าอากาศจะเย็นลง`],
+      cycle:  ['timer','text-leaf', d.remain === 0 ? 'อุณหภูมิปกติ ปั๊มเปิดตลอด เพราะไม่ได้ตั้งเวลาพัก'
+                : d.on ? `อุณหภูมิปกติ ปั๊มเปิดตามรอบ อีก ${mmss(d.remain)} นาทีจะพัก`
+                       : `อุณหภูมิปกติ ปั๊มพักตามรอบ อีก ${mmss(d.remain)} นาทีจะเปิดอีกครั้ง`],
+    }[d.why];
+    const html = `<i data-lucide="${R[0]}" class="mt-1 h-6 w-6 shrink-0 ${R[1]}"></i><span>${R[2]}</span>`;
+    if ($('reason').dataset.k !== html) { $('reason').dataset.k = html; $('reason').innerHTML = html; lucide.createIcons(); }
+
+    // แถบรอบเวลา
+    const onMs = S.onMin*60000, offMs = S.offMin*60000, period = onMs + offMs;
+    $('cOn').style.width = (onMs/period*100) + '%';
+    $('cOnLbl').textContent = `เปิด ${S.onMin} นาที`;
+    $('cOffLbl').textContent = `พัก ${S.offMin} นาที`;
+    const active = d.why === 'cycle';
+    $('cycleWrap').style.opacity = active ? 1 : .35;
+    $('cHead').style.left = active ? `calc(${(d.el/period*100).toFixed(2)}% - 3px)` : '0';
+    $('cycleNote').textContent = active
+      ? (d.remain === 0 ? 'ไม่ได้ตั้งเวลาพัก ปั๊มเปิดตลอด' : `ตอนนี้${d.on ? 'อยู่ช่วงเปิด' : 'อยู่ช่วงพัก'} อีก ${mmss(d.remain)} นาทีจะสลับ`)
+      : { dry:'รอบเวลาหยุดไว้ เพราะน้ำแห้ง', manual:'รอบเวลาไม่ทำงานในโหมดสั่งเอง', hot:'รอบเวลาหยุดไว้ เพราะอากาศร้อนเกินเกณฑ์' }[d.why];
+  }
+
+  function renderChart() {
+    const W=600, H=170, L=34, R=8, T=10, B=22, lo=24, hi=38;
+    const n = S.hist.length, x = (i) => L + (W-L-R) * (n<2 ? 0 : i/(n-1)), y = (v) => T + (H-T-B) * (1 - (Math.min(hi,Math.max(lo,v))-lo)/(hi-lo));
+    let g = '';
+    for (const v of [26,30,34,38]) g += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--ink)" stroke-opacity=".08"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`;
+    let bands = '', start = null;
+    S.hist.forEach((p,i) => {
+      if (p.pump && start === null) start = i;
+      if ((!p.pump || i === n-1) && start !== null) { const end = p.pump ? i : i-1; bands += `<rect x="${x(start)}" y="${T}" width="${Math.max(3, x(end)-x(start))}" height="${H-T-B}" rx="4" fill="#2F7D4F" fill-opacity=".18"/>`; start = null; }
+    });
+    const pts = S.hist.map((p,i) => `${x(i).toFixed(1)},${y(p.temp).toFixed(1)}`).join(' ');
+    const last = S.hist[n-1];
+    $('chart').innerHTML = g + bands +
+      `<line x1="${L}" x2="${W-R}" y1="${y(S.threshold)}" y2="${y(S.threshold)}" stroke="#E0782B" stroke-width="1.5" stroke-dasharray="6 5"/>` +
+      `<text x="${W-R}" y="${y(S.threshold)-5}" text-anchor="end" font-size="11" fill="#E0782B">เกณฑ์ ${S.threshold}°C</text>` +
+      `<polyline points="${pts}" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` +
+      (last ? `<circle cx="${x(n-1)}" cy="${y(last.temp)}" r="5" fill="var(--ink)"/>` : '') +
+      `<text x="${L}" y="${H-5}" font-size="11" fill="var(--muted)">ย้อนหลัง ${n} ครั้ง</text><text x="${W-R}" y="${H-5}" text-anchor="end" font-size="11" fill="var(--muted)">ล่าสุด</text>`;
+  }
+
+  // ---------- เซนเซอร์จำลอง ส่งทุก 5 วินาทีเหมือนอุปกรณ์จริง ----------
+  function sensorTick() {
+    const target = S.forceHot ? 34.5 : 29;
+    S.temp += (target - S.temp)*0.35 + (Math.random()-0.5)*0.5;
+    S.hum = Math.min(88, Math.max(55, S.hum + (Math.random()-0.5)*2));
+    S.hist.push({ temp:S.temp, pump:decide().on });
+    if (S.hist.length > 60) S.hist.shift();
+    S.lastUpdate = Date.now();
+    renderStatic(); renderChart();
+  }
+  for (let i=0;i<40;i++) S.hist.push({ temp: 28.2 + Math.sin(i/6)*1.1 + Math.random()*.4, pump: (i%14) < 7 });
+
+  // ---------- การกระทำของผู้ใช้ ----------
+  document.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', () => {
+    if (S.mode === btn.dataset.mode) return;
+    S.mode = btn.dataset.mode; renderStatic();
+    addLog('sliders-horizontal', '', `เปลี่ยนเป็นโหมด${S.mode === 'auto' ? 'อัตโนมัติ' : 'สั่งเอง'}`);
+    Toast.fire({ icon:'info', title: S.mode === 'auto' ? 'เปลี่ยนเป็นโหมดอัตโนมัติ' : 'เปลี่ยนเป็นโหมดสั่งเอง', ...swalColors() });
+  }));
+
+  $('manualBtn').addEventListener('click', async () => {
+    if (!S.water) return;
+    if (!S.manualPump) {
+      const r = await fire({ title:'เปิดปั๊มเอง?', text:'ปั๊มจะทำงานต่อเนื่องจนกว่าคุณจะกดปิด หรือน้ำแห้ง', icon:'question', showCancelButton:true, confirmButtonText:'เปิดปั๊ม', cancelButtonText:'ยกเลิก' });
+      if (!r.isConfirmed) return;
+    }
+    S.manualPump = !S.manualPump; renderStatic();
+    Toast.fire({ icon:'success', title: S.manualPump ? 'สั่งเปิดปั๊มแล้ว' : 'สั่งปิดปั๊มแล้ว', ...swalColors() });
+  });
+
+  $('autoBox').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const th = parseFloat($('inTh').value), on = parseInt($('inOn').value,10), off = parseInt($('inOff').value,10);
+    if (!(th >= 20 && th <= 45) || !(on >= 1) || !(off >= 0)) {
+      fire({ icon:'error', title:'ค่าไม่ถูกต้อง', text:'อุณหภูมิต้องอยู่ระหว่าง 20 ถึง 45°C เวลาเปิดอย่างน้อย 1 นาที และเวลาพักไม่ติดลบ' });
+      return;
+    }
+    Object.assign(S, { threshold:th, onMin:on, offMin:off, anchor:Date.now() });
+    renderStatic(); renderChart();
+    addLog('save', '', `บันทึกการตั้งค่า เกณฑ์ ${th}°C เปิด ${on} พัก ${off} นาที`);
+    fire({ icon:'success', title:'บันทึกแล้ว', text:`เกณฑ์ ${th}°C เปิด ${on} นาที พัก ${off} นาที เริ่มนับรอบใหม่ตั้งแต่ตอนนี้` });
+  });
+
+  $('simDry').addEventListener('click', () => {
+    S.water = !S.water;
+    setWater(S.water ? 1 : 0.18);
+    if (!S.water) { Toast.fire({ icon:'warning', title:'น้ำแห้ง ระบบปิดปั๊มแล้ว', timer:4500, ...swalColors() }); addLog('triangle-alert', 'text-dry', 'น้ำต่ำกว่าลูกลอย'); }
+    else addLog('waves', 'text-water', 'น้ำกลับมาเหนือลูกลอย');
+    sensorTick();
+  });
+  $('simHot').addEventListener('click', () => {
+    S.forceHot = !S.forceHot;
+    addLog(S.forceHot ? 'sun' : 'snowflake', S.forceHot ? 'text-heat' : 'text-water', S.forceHot ? 'อากาศร้อนขึ้น' : 'อากาศกลับเป็นปกติ');
+    sensorTick();
+  });
+  document.querySelectorAll('[data-soon]').forEach(b => b.addEventListener('click', () => Toast.fire({ icon:'info', title:'หน้านี้ยังไม่มีในตัวอย่าง', ...swalColors() })));
+  $('themeBtn').addEventListener('click', () => {
+    const dark = document.documentElement.classList.toggle('dark');
+    $('themeBtn').innerHTML = `<i data-lucide="${dark ? 'sun' : 'moon'}" class="h-5 w-5"></i>`;
+    lucide.createIcons(); renderChart();
+  });
+
+  // ---------- เริ่มต้น ----------
+  $('today').textContent = new Date().toLocaleDateString('th-TH', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  addLog('wifi', 'text-leaf', 'ESP32 เชื่อมต่อ Wi-Fi แล้ว');
+  renderStatic(); renderChart();
+  S.firstDraw = true;
+  if (motionAnimate && !reduce) {
+    $('water').style.transition = $('waterTop').style.transition = 'none';
+    setWater(0);
+    motionAnimate(0, 1, { duration:1.6, ease:[.3,.7,.2,1], onUpdate: v => setWater(v), onComplete: () => { $('water').style.transition = $('waterTop').style.transition = ''; } });
+  } else { setWater(1); }
+
+  setInterval(sensorTick, 5000);
+  setInterval(() => {
+    $('ago').textContent = Math.round((Date.now()-S.lastUpdate)/1000);
+    if (decide().on !== S.lastPump) renderStatic(); else renderReason();
+  }, 1000);
+</script>
+</body>
+</html>

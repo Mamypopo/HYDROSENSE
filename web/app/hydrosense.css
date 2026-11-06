@@ -1,0 +1,44 @@
+/* นำเข้าใน app/layout.tsx หลัง globals.css  —  สีและคลาสช่วยของ Dashboard */
+:root {
+  --bg: #e9f0ed; --surface: #ffffff; --soft: #f1f6f3; --ink: #0f2a2e; --muted: #5b7378;
+  --line: rgba(15, 42, 46, 0.1); --accent: #2f7d4f;
+  --shadow: 0 1px 2px rgba(15, 42, 46, 0.05), 0 8px 24px -12px rgba(15, 42, 46, 0.18);
+}
+.dark {
+  --bg: #0a1a1d; --surface: #12292d; --soft: #183338; --ink: #e6f2ef; --muted: #8faaae;
+  --line: rgba(230, 242, 239, 0.1); --accent: #5cc38a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px -14px rgba(0, 0, 0, 0.6);
+}
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
+
+body.hs { background: var(--bg); color: var(--ink); transition: background-color 0.25s, color 0.25s; }
+.hs-tile { background: var(--surface); box-shadow: var(--shadow); border-radius: 22px; padding: 18px; }
+@media (min-width: 640px) { .hs-tile { padding: 22px; } }
+.hs-soft { background: var(--soft); }
+.hs-muted { color: var(--muted); }
+.hs-line-t { border-top: 1px solid var(--line); }
+.hs-num { font-family: var(--font-display), var(--font-sans), sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+/* ช่องกรอก: ขนาดตัวอักษร 16px ขึ้นไป กัน iOS ซูมหน้าจอเอง */
+.hs-field {
+  background: var(--soft); border: 1px solid var(--line); color: var(--ink);
+  border-radius: 14px; min-height: 48px; padding: 0 14px; width: 100%; font-size: 18px;
+}
+.hs-nav { color: var(--muted); }
+.hs-nav:hover { color: var(--ink); background: var(--soft); }
+.hs-nav[aria-current='page'] { color: #fff; background: var(--accent); }
+
+.hs-safe-bottom { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+
+.hs-flow { stroke-dasharray: 8 8; animation: hs-flow 0.7s linear infinite; }
+.hs-spin { transform-origin: 280px 290px; animation: hs-spin 0.9s linear infinite; }
+.hs-pulse { animation: hs-pulse 2s ease-in-out infinite; }
+@keyframes hs-flow { to { stroke-dashoffset: -16; } }
+@keyframes hs-spin { to { transform: rotate(360deg); } }
+@keyframes hs-pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) {
+  .hs-flow, .hs-spin, .hs-pulse { animation: none; }
+  body.hs { transition: none; }
+}
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 10px; }
