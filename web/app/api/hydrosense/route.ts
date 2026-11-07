@@ -1,5 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { decidePump, type PumpSettings } from '@/lib/pump';
+import { lineEnabled, sendLine } from '@/lib/line';
+import { buildAlerts, LOOKBACK, type PastReading } from '@/lib/alerts';
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
 
 export const runtime = 'nodejs';
@@ -41,19 +43,21 @@ export async function POST(req: Request) {
 
   // Safety Rule: น้ำแห้ง = ปิดปั๊มเสมอ โดยไม่ต้องรอฐานข้อมูล
   let pump_status = false;
+  let settings: PumpSettings | null = null;
 
   if (water_level) {
-    const { data: settings, error } = await supabase
+    const { data, error } = await supabase
       .from('pump_settings')
       .select('*')
       .eq('id', 1)
       .single<PumpSettings>();
 
-    if (error || !settings) {
+    if (error || !data) {
       console.error('[hydrosense] load settings failed:', error);
       // ตอบ 500 ให้ ESP32 คงสถานะเดิม (และ fail-safe ปิดปั๊มเองภายใน 30 วินาที)
       return NextResponse.json({ error: 'settings unavailable' }, { status: 500 });
     }
+    settings = data;
 
     const d = decidePump(settings, { temperature, water_level, soil_moisture });
     pump_status = d.on;
@@ -65,6 +69,27 @@ export async function POST(req: Request) {
         .update({ soil_watering: d.watering })
         .eq('id', 1);
       if (stateError) console.error('[hydrosense] save soil_watering failed:', stateError);
+    }
+  }
+
+  // แจ้งเตือน LINE (น้ำหมด/น้ำกลับมา/ร้อนเกิน/ดินแห้ง) กติกาอยู่ใน lib/alerts.ts
+  // ส่งหลังตอบ ESP32 แล้ว (after) ไม่ทำให้ช้า และถ้าพลาดก็ไม่กระทบการสั่งปั๊ม
+  if (lineEnabled()) {
+    try {
+      if (!settings) {
+        // น้ำแห้งไม่ได้โหลดค่าตั้งไว้ข้างบน โหลดเพิ่มเฉพาะเพื่อแจ้งเตือน (พลาดก็ข้าม)
+        const { data } = await supabase.from('pump_settings').select('*').eq('id', 1).single<PumpSettings>();
+        settings = data ?? null;
+      }
+      const { data: prev } = await supabase
+        .from('sensor_readings')
+        .select('water_level, temperature, soil_moisture')
+        .order('created_at', { ascending: false })
+        .limit(LOOKBACK);
+      const msgs = buildAlerts({ temperature, water_level, soil_moisture }, (prev ?? []) as PastReading[], settings);
+      for (const m of msgs) after(() => sendLine(m));
+    } catch (e) {
+      console.error('[hydrosense] alert check failed:', e);
     }
   }
 
