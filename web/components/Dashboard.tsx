@@ -10,7 +10,7 @@ import type { Reading } from '@/lib/types';
 import { decidePump, type PumpSettings } from '@/lib/pump';
 import Hero from './Hero';
 import ControlCard from './ControlCard';
-import AutoSettings from './AutoSettings';
+import AutoSettings, { type AutoValues } from './AutoSettings';
 import HistoryChart from './HistoryChart';
 
 type LogItem = { id: number; t: string; Icon: LucideIcon; tone: string; text: string };
@@ -112,14 +112,35 @@ export default function Dashboard() {
     }
   }
 
-  async function onSave({ th, on, off }: { th: number; on: number; off: number }) {
+  async function onStrategy(v: 'temp' | 'soil') {
+    if (!settings || settings.auto_strategy === v) return;
+    if (await patchSettings({ auto_strategy: v })) {
+      addLog(SlidersHorizontal, '', `รดน้ำตาม${v === 'soil' ? 'ความชื้นดิน' : 'อุณหภูมิและเวลา'}`);
+      toast(v === 'soil' ? 'รดน้ำตามความชื้นดิน' : 'รดน้ำตามอุณหภูมิและเวลา');
+    }
+  }
+
+  async function onSave({ th, on, off, ss, se }: AutoValues) {
+    if (!settings) return;
     if (!(th >= 20 && th <= 45) || !(on >= 1) || !(off >= 0)) {
       fire({ icon: 'error', title: 'ค่าไม่ถูกต้อง', text: 'อุณหภูมิต้องอยู่ระหว่าง 20 ถึง 45°C เวลาเปิดอย่างน้อย 1 นาที และเวลาพักไม่ติดลบ' });
       return;
     }
-    if (await patchSettings({ temp_threshold: th, cycle_on_min: on, cycle_off_min: off, reset_cycle: true })) {
-      addLog(Save, '', `บันทึกการตั้งค่า เกณฑ์ ${th}°C เปิด ${on} พัก ${off} นาที`);
-      fire({ icon: 'success', title: 'บันทึกแล้ว', text: `เกณฑ์ ${th}°C เปิด ${on} นาที พัก ${off} นาที เริ่มนับรอบใหม่ตั้งแต่ตอนนี้` });
+    if (!(ss >= 5 && se <= 95 && se - ss >= 5)) {
+      fire({ icon: 'error', title: 'ค่าดินไม่ถูกต้อง', text: 'ค่าหยุดรดต้องมากกว่าค่าเริ่มรดอย่างน้อย 5% และอยู่ระหว่าง 5 ถึง 95%' });
+      return;
+    }
+    const cycleChanged = on !== settings.cycle_on_min || off !== settings.cycle_off_min;
+    const ok = await patchSettings({
+      temp_threshold: th, cycle_on_min: on, cycle_off_min: off, soil_start_pct: ss, soil_stop_pct: se,
+      ...(cycleChanged ? { reset_cycle: true } : {}),
+    });
+    if (ok) {
+      const text = settings.auto_strategy === 'soil'
+        ? `เริ่มรดเมื่อดินแห้งถึง ${ss}% หยุดเมื่อชื้นถึง ${se}%`
+        : `เกณฑ์ ${th}°C เปิด ${on} นาที พัก ${off} นาที${cycleChanged ? ' เริ่มนับรอบใหม่ตั้งแต่ตอนนี้' : ''}`;
+      addLog(Save, '', `บันทึกการตั้งค่า ${text}`);
+      fire({ icon: 'success', title: 'บันทึกแล้ว', text });
     }
   }
 
@@ -140,13 +161,18 @@ export default function Dashboard() {
 
   const waterOk = latest ? latest.water_level : null;
   const pumpOn = latest ? latest.pump_status : null;
-  const decision = latest ? decidePump(settings, { temperature: latest.temperature, water_level: latest.water_level }, now) : null;
+  // ความชื้นดินล่าสุด (null = ไม่มีเซนเซอร์ดินหรือยังไม่ได้ส่งมา)
+  const soil = latest && latest.soil_moisture !== null && latest.soil_moisture !== undefined ? Number(latest.soil_moisture) : null;
+  const decision = latest ? decidePump(settings, { temperature: latest.temperature, water_level: latest.water_level, soil_moisture: soil }, now) : null;
   const agoSec = latest ? Math.max(0, Math.round((now - new Date(latest.created_at).getTime()) / 1000)) : null;
   const online = agoSec !== null && agoSec < 20;
   const hot = latest ? latest.temperature > settings.temp_threshold : false;
+  const soilMode = settings.auto_strategy === 'soil' && settings.mode === 'auto' && soil !== null;
 
   const headline = !latest ? 'รอข้อมูล\nจากอุปกรณ์นะ'
     : waterOk === false ? 'น้ำแห้งแล้ว\nปั๊มพักก่อนนะ'
+    : soilMode && pumpOn ? 'ดินแห้ง\nกำลังรดน้ำให้'
+    : soilMode ? 'ดินยังชื้นอยู่\nปั๊มพักก่อนนะ'
     : hot && pumpOn ? 'ร้อนจัง\nกำลังรดน้ำให้'
     : hot ? 'ร้อนจัง\nรอปั๊มทำงาน'
     : pumpOn ? 'ผักกำลัง\nดื่มน้ำอยู่'
@@ -164,15 +190,15 @@ export default function Dashboard() {
       <Hero
         pumpOn={pumpOn} today={today} online={online} agoSec={agoSec} dark={dark} onToggleTheme={toggleTheme}
         headline={headline} temp={latest ? latest.temperature : null} hum={latest ? latest.humidity : null}
-        waterOk={waterOk} hot={hot}
+        waterOk={waterOk} hot={hot} soil={soil}
       />
 
       <main className="hs-sheet relative z-10 -mt-10 rounded-t-[40px] px-4 pb-36 pt-7 sm:px-8 lg:mt-0 lg:min-h-dvh lg:rounded-none lg:px-14 lg:pb-16 lg:pt-14">
         <div className="mx-auto max-w-[640px]">
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <ControlCard settings={settings} decision={decision} waterOk={waterOk} pumpOn={pumpOn} onMode={onMode} onManualToggle={onManualToggle} />
+            <ControlCard settings={settings} decision={decision} waterOk={waterOk} pumpOn={pumpOn} soil={soil} onMode={onMode} onManualToggle={onManualToggle} />
 
-            <AutoSettings settings={settings} decision={decision} onSave={onSave} />
+            <AutoSettings settings={settings} decision={decision} soil={soil} onStrategy={onStrategy} onSave={onSave} />
 
             <section aria-labelledby="hist-title" className="hs-b hs-b-plot col-span-2 rounded-[32px]">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">

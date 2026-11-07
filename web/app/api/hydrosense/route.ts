@@ -19,16 +19,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'invalid json' }, { status: 400 });
   }
 
-  const { temperature, humidity, water_level } = (body ?? {}) as Record<string, unknown>;
+  const { temperature, humidity, water_level, soil_moisture: soilRaw } = (body ?? {}) as Record<string, unknown>;
   if (
     typeof temperature !== 'number' || !Number.isFinite(temperature) ||
     typeof humidity !== 'number' || !Number.isFinite(humidity) ||
     typeof water_level !== 'boolean'
   ) {
     return NextResponse.json(
-      { error: 'expected {temperature:number, humidity:number, water_level:boolean}' },
+      { error: 'expected {temperature:number, humidity:number, water_level:boolean, soil_moisture?:number}' },
       { status: 400 }
     );
+  }
+  // soil_moisture เป็นค่าเสริม (0-100) ไม่ส่งมา/เป็น null = ไม่มีเซนเซอร์ดิน
+  let soil_moisture: number | null = null;
+  if (soilRaw !== undefined && soilRaw !== null) {
+    if (typeof soilRaw !== 'number' || !Number.isFinite(soilRaw) || soilRaw < 0 || soilRaw > 100) {
+      return NextResponse.json({ error: 'soil_moisture must be a number 0-100' }, { status: 400 });
+    }
+    soil_moisture = soilRaw;
   }
 
   // Safety Rule: น้ำแห้ง = ปิดปั๊มเสมอ โดยไม่ต้องรอฐานข้อมูล
@@ -47,7 +55,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'settings unavailable' }, { status: 500 });
     }
 
-    pump_status = decidePump(settings, { temperature, water_level }).on;
+    const d = decidePump(settings, { temperature, water_level, soil_moisture });
+    pump_status = d.on;
+
+    // โหมดตามดิน: จำสถานะ "กำลังรดอยู่" ไว้ข้ามรอบ (ให้ปั๊มเปิดค้างจนดินถึงค่าหยุด)
+    if (d.why === 'soil' && d.watering !== Boolean(settings.soil_watering)) {
+      const { error: stateError } = await supabase
+        .from('pump_settings')
+        .update({ soil_watering: d.watering })
+        .eq('id', 1);
+      if (stateError) console.error('[hydrosense] save soil_watering failed:', stateError);
+    }
   }
 
   // บันทึกประวัติ — ถ้าบันทึกพลาดก็ยังตอบคำสั่งปั๊มตามปกติ
@@ -56,6 +74,7 @@ export async function POST(req: Request) {
     humidity,
     water_level,
     pump_status,
+    soil_moisture,
   });
   if (insertError) console.error('[hydrosense] insert failed:', insertError);
 

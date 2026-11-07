@@ -38,6 +38,31 @@ export async function PATCH(req: Request) {
     if (typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v > 240) return bad('cycle_off_min');
     patch.cycle_off_min = v;
   }
+  if ('auto_strategy' in b) {
+    if (b.auto_strategy !== 'temp' && b.auto_strategy !== 'soil') return bad('auto_strategy');
+    patch.auto_strategy = b.auto_strategy;
+  }
+  for (const k of ['soil_start_pct', 'soil_stop_pct'] as const) {
+    if (k in b) {
+      const v = b[k];
+      if (typeof v !== 'number' || !Number.isInteger(v) || v < 5 || v > 95) return bad(k);
+      patch[k] = v;
+    }
+  }
+  // ค่าเริ่มรดต้องต่ำกว่าค่าหยุดรดอย่างน้อย 5 (ไม่งั้นปั๊มจะเปิดปิดถี่) — ถ้าส่งมาแค่ตัวเดียว เทียบกับค่าเดิมในฐานข้อมูล
+  if ('soil_start_pct' in patch || 'soil_stop_pct' in patch) {
+    let start = patch.soil_start_pct as number | undefined;
+    let stop = patch.soil_stop_pct as number | undefined;
+    if (start === undefined || stop === undefined) {
+      const { data: cur } = await supabaseAdmin
+        .from('pump_settings').select('soil_start_pct, soil_stop_pct').eq('id', 1).single();
+      start ??= cur?.soil_start_pct;
+      stop ??= cur?.soil_stop_pct;
+    }
+    if (typeof start !== 'number' || typeof stop !== 'number' || stop - start < 5) {
+      return NextResponse.json({ error: 'soil_stop_pct must be at least 5 higher than soil_start_pct' }, { status: 400 });
+    }
+  }
   if (b.reset_cycle === true) patch.cycle_anchor = new Date().toISOString();
 
   const { data, error } = await supabaseAdmin

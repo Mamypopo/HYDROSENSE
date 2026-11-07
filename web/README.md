@@ -18,6 +18,7 @@
 ## ขั้นตอนติดตั้ง
 1. สร้างโปรเจกต์ Supabase เลือก Region **Southeast Asia (Singapore)** ใกล้ประเทศไทยที่สุด
 2. Supabase > **SQL Editor** > New query > วางเนื้อหา `supabase/schema.sql` ทั้งไฟล์ > กด **Run** (ต้องขึ้น Success) แล้วเช็กที่ Table Editor ว่ามี `pump_settings` (1 แถว) และ `sensor_readings`
+   - **อัปเดตเป็นเวอร์ชันที่มีเซนเซอร์ดิน:** รันไฟล์ `schema.sql` ซ้ำได้เลย (ใช้ `if not exists` ไม่ลบข้อมูลเดิม) มันจะเพิ่มคอลัมน์ `soil_moisture`, `auto_strategy`, `soil_start_pct`, `soil_stop_pct`, `soil_watering` **รันก่อน deploy โค้ดใหม่**
 3. Supabase > **Project Settings > API** คัดลอก Project URL และ `service_role` key
 4. คัดลอก `.env.example` เป็น `.env.local` แล้วใส่ค่า
 5. `npm i @supabase/supabase-js framer-motion lucide-react sweetalert2`

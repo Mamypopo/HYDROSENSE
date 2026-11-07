@@ -14,23 +14,31 @@ type Props = {
   decision: Decision | null;
   waterOk: boolean | null;
   pumpOn: boolean | null;
+  soil: number | null;
   onMode: (m: 'auto' | 'manual') => void;
   onManualToggle: () => void;
 };
 
 // ปั๊มพูดเอง: บอกว่าตอนนี้ทำอะไรและเพราะอะไร
-function speech(d: Decision | null, threshold: number): string {
+function speech(d: Decision | null, s: PumpSettings, soil: number | null): string {
   if (!d) return 'รอข้อมูลจากอุปกรณ์อยู่นะ';
   if (d.why === 'dry') return 'น้ำหมดแล้ว ขอหยุดก่อนนะ จะไม่เปิดจนกว่าน้ำจะกลับมา แม้ใครสั่งก็ตาม';
   if (d.why === 'manual') return d.on ? 'ได้เลย! ทำงานให้จนกว่าคุณจะสั่งหยุดนะ' : 'พักอยู่ รอคำสั่งจากคุณ';
-  if (d.why === 'hot') return `ร้อนเกิน ${threshold}°C แล้ว รดน้ำให้ต่อเนื่องเลย`;
-  if (d.remainMs === 0) return 'อากาศกำลังดี และไม่ได้ตั้งเวลาพัก เลยเปิดไว้ตลอด';
+  if (d.why === 'soil') {
+    const v = soil === null ? '' : ` (${Math.round(soil)}%)`;
+    return d.on
+      ? `ดินแห้ง${v} กำลังรดจนชื้นถึง ${s.soil_stop_pct}% นะ`
+      : `ดินชื้นพอแล้ว${v} จะรดอีกเมื่อแห้งถึง ${s.soil_start_pct}%`;
+  }
+  const lead = d.fallback ? 'ยังไม่ได้ค่าดิน เลยใช้กฎอุณหภูมิแทน ' : '';
+  if (d.why === 'hot') return `${lead}ร้อนเกิน ${s.temp_threshold}°C แล้ว รดน้ำให้ต่อเนื่องเลย`;
+  if (d.remainMs === 0) return `${lead}อากาศกำลังดี และไม่ได้ตั้งเวลาพัก เลยเปิดไว้ตลอด`;
   return d.on
-    ? `อากาศกำลังดี เปิดตามรอบอยู่ อีก ${mmss(d.remainMs!)} นาทีจะพัก`
-    : `พักตามรอบอยู่ อีก ${mmss(d.remainMs!)} นาทีจะเปิดอีกครั้ง`;
+    ? `${lead}อากาศกำลังดี เปิดตามรอบอยู่ อีก ${mmss(d.remainMs!)} นาทีจะพัก`
+    : `${lead}พักตามรอบอยู่ อีก ${mmss(d.remainMs!)} นาทีจะเปิดอีกครั้ง`;
 }
 
-export default function ControlCard({ settings, decision, waterOk, pumpOn, onMode, onManualToggle }: Props) {
+export default function ControlCard({ settings, decision, waterOk, pumpOn, soil, onMode, onManualToggle }: Props) {
   const dry = waterOk === false;
 
   const modeBtn = (m: 'auto' | 'manual', label: string, icon: React.ReactNode) => {
@@ -59,7 +67,7 @@ export default function ControlCard({ settings, decision, waterOk, pumpOn, onMod
       <div className="mt-4 flex items-start gap-3">
         <PumpFace on={pumpOn} dry={dry} />
         <p aria-live="polite" className="hs-bubble relative flex-1 rounded-[22px] px-4 py-3 text-[15px] leading-relaxed">
-          {speech(decision, settings.temp_threshold)}
+          {speech(decision, settings, soil)}
         </p>
       </div>
 

@@ -27,6 +27,16 @@ create table if not exists public.sensor_readings (
 create index if not exists sensor_readings_created_at_idx
   on public.sensor_readings (created_at desc);
 
+-- 2.1) เซนเซอร์ความชื้นดิน (เพิ่มภายหลัง) — รันซ้ำได้ ไม่กระทบข้อมูลเดิม
+alter table public.sensor_readings
+  add column if not exists soil_moisture numeric;           -- 0-100 %, null = ไม่มีเซนเซอร์ดิน
+
+alter table public.pump_settings
+  add column if not exists auto_strategy  text    not null default 'temp',   -- 'temp' = ตามอุณหภูมิ/รอบเวลา, 'soil' = ตามดิน
+  add column if not exists soil_start_pct int     not null default 35,       -- ดินแห้งถึงค่านี้ = เริ่มรด
+  add column if not exists soil_stop_pct  int     not null default 60,       -- ดินชื้นถึงค่านี้ = หยุดรด
+  add column if not exists soil_watering  boolean not null default false;    -- จำสถานะ "กำลังรดอยู่"
+
 -- 3) Row Level Security: เปิดไว้และไม่สร้าง policy ให้ anon/authenticated
 -- ผลคือเข้าตารางจากเบราว์เซอร์โดยตรงไม่ได้ ทุกอย่างผ่าน API routes ที่ใช้ service_role (ข้าม RLS)
 alter table public.pump_settings   enable row level security;

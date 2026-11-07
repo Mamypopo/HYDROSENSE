@@ -20,13 +20,23 @@
 // ============================================================
 //                    CONFIG (แก้ตรงนี้เท่านั้น)
 // ============================================================
-const char* WIFI_SSID        = "YOUR_WIFI_SSID";
-const char* WIFI_PASSWORD    = "YOUR_WIFI_PASSWORD";
-const char* API_ENDPOINT_URL = "http://192.168.1.100:3000/api/hydrosense";
+const char* WIFI_SSID        = "HydroSense";   // ฮอตสปอตมือถือ 2.4GHz ชื่อนี้ (ตัวพิมพ์เล็กใหญ่ต้องตรง)
+const char* WIFI_PASSWORD    = "12345678";
+const char* API_ENDPOINT_URL = "https://hydrosense-five.vercel.app/api/hydrosense";
 const char* API_KEY          = "";               // ถ้าเซิร์ฟเวอร์ตั้ง HYDROSENSE_API_KEY ให้ใส่ค่าเดียวกัน (เว้นว่าง = ไม่ส่ง)
 const unsigned long INTERVAL_MS = 5000;          // ส่งข้อมูลทุก 5 วินาที
 
+// --- โหมดทดสอบ / อุปกรณ์เสริม ---
+const bool FAKE_DHT     = false;  // true = ยังไม่มี DHT22: ส่งอุณหภูมิ/ความชื้นปลอม (~28°C, 70%) ไว้ทดสอบระบบ (ของจริงต้องเป็น false)
+const bool SOIL_ENABLED = false;  // เปลี่ยนเป็น true หลังต่อเซนเซอร์ดินเข้า GPIO34 แล้ว (false = ไม่ส่งค่าดินขึ้นเว็บ กันค่าขยะจากขาลอย)
+
+// --- เซนเซอร์ความชื้นดิน: ปรับเทียบ (calibrate) ตามขั้นตอนใน SETUP.md ข้อ "ปรับเทียบเซนเซอร์ดิน" ---
+const int SOIL_RAW_DRY = 3500;    // ค่าดิบตอนเซนเซอร์อยู่กลางอากาศ (แห้ง = 0%)
+const int SOIL_RAW_WET = 1500;    // ค่าดิบตอนจุ่มน้ำ (เปียก = 100%)  (ใส่สลับมาก-น้อยได้ ไม่ว่าเซนเซอร์จะให้ค่ากลับด้าน)
+
 // --- ขา GPIO ---
+const uint8_t PIN_SOIL  = 34;   // เซนเซอร์ดิน AO/AOUT (ขารับค่า analog อย่างเดียว ADC1 ใช้พร้อม Wi-Fi ได้)
+const int8_t  PIN_SOIL_POWER = -1;  // -1 = ต่อ VCC ของเซนเซอร์เข้า 3V3 ตรงๆ / เลขขา (เช่น 25) = จ่ายไฟเฉพาะตอนอ่าน ช่วยลดการกัดกร่อนของเซนเซอร์แบบสองขาโลหะ
 const uint8_t PIN_DHT   = 4;    // DHT22 DATA
 const uint8_t PIN_FLOAT = 27;   // Float switch (อีกสายลง GND)
 const uint8_t PIN_RELAY = 26;   // Relay IN
@@ -53,6 +63,7 @@ byte degreeChar[8] = {0x07, 0x05, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 float temperature = NAN;
 float humidity    = NAN;
+float soilPct     = NAN;     // ความชื้นดิน 0-100 (NAN = ไม่มี/อ่านไม่ได้)
 bool  waterOk     = false;   // สถานะหลัง debounce
 bool  pumpOn      = false;
 
@@ -89,6 +100,12 @@ void setPump(bool wantOn) {
 // อ่านเซนเซอร์
 // ---------------------------------------------------------------
 bool readDHT() {
+  if (FAKE_DHT) {   // โหมดทดสอบ: ค่าเปลี่ยนช้าๆ เล็กน้อยให้เห็นว่ามีการอัปเดต
+    temperature = 28.0f + 1.5f * sinf(millis() / 30000.0f);
+    humidity = 70.0f;
+    Serial.println("[DHT] FAKE_DHT เปิดอยู่: ใช้ค่าจำลอง ไม่ใช่ค่าจริง");
+    return true;
+  }
   float t = dht.readTemperature();
   float h = dht.readHumidity();
   if (isnan(t) || isnan(h)) {
@@ -98,6 +115,20 @@ bool readDHT() {
   temperature = t;
   humidity = h;
   return true;
+}
+
+// อ่านความชื้นดินเฉลี่ย 10 ครั้ง แล้วแปลงเป็น 0-100%
+void readSoil() {
+  if (!SOIL_ENABLED) { soilPct = NAN; return; }
+  if (PIN_SOIL_POWER >= 0) { digitalWrite(PIN_SOIL_POWER, HIGH); delay(30); }
+  long sum = 0;
+  for (int i = 0; i < 10; i++) { sum += analogRead(PIN_SOIL); delay(5); }
+  if (PIN_SOIL_POWER >= 0) digitalWrite(PIN_SOIL_POWER, LOW);
+
+  int raw = (int)(sum / 10);
+  float pct = (float)(raw - SOIL_RAW_DRY) * 100.0f / (float)(SOIL_RAW_WET - SOIL_RAW_DRY);
+  soilPct = constrain(pct, 0.0f, 100.0f);
+  Serial.printf("[SOIL] raw=%d -> %.0f%%\n", raw, soilPct);   // ดูค่า raw ตรงนี้เพื่อ calibrate
 }
 
 // อ่านลูกลอยดิบ (true = น้ำปกติ)
@@ -132,8 +163,11 @@ void updateLCD() {
   if (isnan(temperature)) {
     snprintf(l1, sizeof(l1), "T:--.-  H:--%%   ");
     l1[16] = 0;
+  } else if (SOIL_ENABLED) {
+    // มีดิน: "28.5°C H70% S42%" ใช้ \x01 เป็นตัวอักษรองศา (custom char)
+    if (isnan(soilPct)) snprintf(l1, sizeof(l1), "%.0f\x01 H%.0f%% S--%%", temperature, humidity);
+    else                snprintf(l1, sizeof(l1), "%.0f\x01 H%.0f%% S%.0f%%", temperature, humidity, soilPct);
   } else {
-    // ใช้ \x01 เป็นตัวอักษรองศา (custom char)
     snprintf(l1, sizeof(l1), "T:%.1f\x01" "C H:%.0f%%", temperature, humidity);
   }
   snprintf(l2, sizeof(l2), "W:%-3s Pump:%-3s", waterOk ? "OK" : "LOW", pumpOn ? "ON" : "OFF");
@@ -192,6 +226,7 @@ bool postAndGetCommand() {
   doc["temperature"] = serialized(String(temperature, 1));
   doc["humidity"]    = serialized(String(humidity, 1));
   doc["water_level"] = waterOk;
+  if (SOIL_ENABLED && !isnan(soilPct)) doc["soil_moisture"] = serialized(String(soilPct, 1));
   String body;
   serializeJson(doc, body);
 
@@ -243,6 +278,8 @@ void setup() {
   writeRelay(false);
 
   pinMode(PIN_FLOAT, INPUT_PULLUP);
+  if (PIN_SOIL_POWER >= 0) { pinMode(PIN_SOIL_POWER, OUTPUT); digitalWrite(PIN_SOIL_POWER, LOW); }
+  analogSetPinAttenuation(PIN_SOIL, ADC_11db);   // อ่านช่วง 0-3.3V
 
   Serial.begin(115200);
   delay(300);
@@ -264,6 +301,7 @@ void setup() {
   connectWiFi();
   lastSendAt = millis() - INTERVAL_MS;   // ส่งรอบแรกทันที
   readDHT();
+  readSoil();
   updateLCD();
 }
 
@@ -274,6 +312,7 @@ void loop() {
   unsigned long now = millis();
   if (now - lastSendAt >= INTERVAL_MS) {
     lastSendAt = now;
+    readSoil();
     if (readDHT()) {
       if (postAndGetCommand()) {
         lastServerOkAt = now;

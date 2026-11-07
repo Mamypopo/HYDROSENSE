@@ -7,6 +7,7 @@
   --pump-bg: #d6ecfb; --pump-ink: #12507a; --pump-acc: #1f78b4;
   --heat-bg: #ffe2c7; --heat-ink: #8a3f0c; --heat-acc: #f08a3c;
   --time-bg: #fff0b8; --time-ink: #6b5300; --time-acc: #d9a514;
+  --soil-bg: #f7dccf; --soil-ink: #6b2e1a; --soil-acc: #d9774f;
   --plot-bg: #e9e4fa; --plot-ink: #3f3480;
   --diary-bg: #d8f2e3; --diary-ink: #17583a;
   --bubble: #ffffff; --step: rgba(255, 255, 255, 0.72);
@@ -23,6 +24,7 @@
   --pump-bg: #12384f; --pump-ink: #bfe3f7; --pump-acc: #5db5ea;
   --heat-bg: #4a2a12; --heat-ink: #ffd9b8; --heat-acc: #f59a52;
   --time-bg: #3e3410; --time-ink: #ffe9a3; --time-acc: #e8bd3a;
+  --soil-bg: #4a2a20; --soil-ink: #ffdccf; --soil-acc: #f0946a;
   --plot-bg: #2a2550; --plot-ink: #d9d2ff;
   --diary-bg: #153b2a; --diary-ink: #cdefd9;
   --bubble: #1a2230; --step: rgba(255, 255, 255, 0.12);
@@ -104,6 +106,7 @@ body.hs { background: var(--sheet); color: var(--ink); }
 .hs-b-pump { background: var(--pump-bg); color: var(--pump-ink); }
 .hs-b-heat { background: var(--heat-bg); color: var(--heat-ink); }
 .hs-b-time { background: var(--time-bg); color: var(--time-ink); }
+.hs-b-soil { background: var(--soil-bg); color: var(--soil-ink); }
 .hs-b-plot { background: var(--plot-bg); color: var(--plot-ink); }
 .hs-b-diary { background: var(--diary-bg); color: var(--diary-ink); }
 .hs-bubble { background: var(--bubble); color: var(--ink); }

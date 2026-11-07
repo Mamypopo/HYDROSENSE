@@ -20,6 +20,7 @@ type Props = {
   hum: number | null;
   waterOk: boolean | null;
   hot: boolean;
+  soil: number | null;
 };
 
 function Chip({ icon, value, unit, label, tone = '' }: { icon: ReactNode; value: string; unit?: string; label: string; tone?: string }) {
@@ -34,7 +35,7 @@ function Chip({ icon, value, unit, label, tone = '' }: { icon: ReactNode; value:
   );
 }
 
-export default function Hero({ pumpOn, today, online, agoSec, dark, onToggleTheme, headline, temp, hum, waterOk, hot }: Props) {
+export default function Hero({ pumpOn, today, online, agoSec, dark, onToggleTheme, headline, temp, hum, waterOk, hot, soil }: Props) {
   const reduce = useReducedMotion();
   // จังหวะเดียวที่ขยับเอง: ภาพเลื่อนเข้า แล้วชิปค่อยๆ ขึ้นทีละใบ
   const photoAnim = reduce ? {} : { initial: { scale: 1.12 }, animate: { scale: 1 }, transition: { duration: 1.8, ease: [0.2, 0.7, 0.2, 1] as const } };
@@ -71,7 +72,7 @@ export default function Hero({ pumpOn, today, online, agoSec, dark, onToggleThem
         <p className="mt-3 text-[var(--hero-sub)]">
           {agoSec === null ? 'ยังไม่มีข้อมูลจากอุปกรณ์' : `อัปเดตล่าสุด ${agoSec} วินาทีก่อน`}
         </p>
-        <motion.div className="mt-6 grid grid-cols-3 gap-2.5 sm:gap-3" {...chipsAnim}>
+        <motion.div className={`mt-6 grid gap-2.5 sm:gap-3 ${soil !== null ? 'grid-cols-2 min-[480px]:grid-cols-4' : 'grid-cols-3'}`} {...chipsAnim}>
           <motion.div {...item}>
             <Chip icon={<Thermometer className="h-4 w-4" />} label="อุณหภูมิ" value={temp === null ? '--' : temp.toFixed(1)} unit="°C" tone={hot ? 'hs-glass-warn' : ''} />
           </motion.div>
@@ -81,6 +82,11 @@ export default function Hero({ pumpOn, today, online, agoSec, dark, onToggleThem
           <motion.div {...item}>
             <Chip icon={<Waves className="h-4 w-4" />} label="ระดับน้ำ" value={waterOk === null ? '--' : waterOk ? 'ปกติ' : 'แห้ง'} tone={waterOk === false ? 'hs-glass-bad' : ''} />
           </motion.div>
+          {soil !== null && (
+            <motion.div {...item}>
+              <Chip icon={<Sprout className="h-4 w-4" />} label="ความชื้นดิน" value={String(Math.round(soil))} unit="%" />
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </header>
